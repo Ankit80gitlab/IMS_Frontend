@@ -1,0 +1,100 @@
+<page-header class="bg-green-600"></page-header>
+<div class="container-fluid">
+  <div class="row">
+    <mat-sidenav-container class="map-sidenav-container">
+      <mat-sidenav-content role="region">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="row">
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button [ngClass]="{ 'active': zoneDraw.getActive()}"
+                            class="control-button" (click)="addZoneClick()" matTooltip="Add Zone">
+                      <img src="./assets/images/map-icons/map-marker.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button [ngClass]="{ 'active': zoneEditActive}"
+                            class="control-button" (click)="editZoneClick()" matTooltip="Edit Zone">
+                      <img src="./assets/images/map-icons/design.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button class="control-button" (click)="addAreaClick()" matTooltip="Add Area">
+                      <img src="./assets/images/map-icons/shape.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button class="control-button" matTooltip="Edit Area" (click)="editAreaClick()">
+                      <img src="./assets/images/map-icons/map.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button class="control-button" matTooltip="Add Device" (click)="addDeviceClick()">
+                      <img src="./assets/images/map-icons/cpu2.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button class="control-button" (click)="editDeviceClick()" matTooltip="Edit Device">
+                      <img src="./assets/images/map-icons/cpu.png" class="map_draw_icons">
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
+                <div class="text-center m-t-12 m-b-24">
+                  <p class="f-s-12">
+                    <button mat-icon-button aria-label="Playlist menu" (click)="endSnav.toggle()">
+                      <mat-icon aria-hidden="true">toc</mat-icon>
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <div #map id="map" class="map"></div>
+          </div>
+        </div>
+      </mat-sidenav-content>
+      <mat-sidenav #endSnav mode="side" position="end" class="zone-sidenav" role="region">
+        <mat-nav-list>
+          <mat-form-field class="w-full">
+            <mat-label>Zone</mat-label>
+              <mtx-select [items]="zoneArray$ | async" bindLabel="name" bindValue="id"
+                          [(ngModel)]="selectedZone"
+                          [virtualScroll] = "true" (scrollToEnd)="onZoneScrollEnd()"
+                          (search)="onZoneSearch($event)" [loading]="zoneLoading"
+                          [searchable]="true"
+                          (change)="onZoneSelect($event)">
+              </mtx-select>
+          </mat-form-field>
+          <mat-divider class="m-y-16"></mat-divider>
+        </mat-nav-list>
+      </mat-sidenav>
+    </mat-sidenav-container>
+  </div>
+</div>

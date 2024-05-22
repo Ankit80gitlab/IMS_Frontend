@@ -1,0 +1,78 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row">
+    <div class="col-md-8">
+        <mat-card>
+            <mat-card-header  style="margin: auto;padding: 2%;">
+                <mat-card-title>ROLES</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div style="padding: 7px;">
+                    <input class="form-control" type="text" name="search"
+                           [(ngModel)]="searchTerm" autocomplete="off" #input
+                           placeholder="Search Role">
+                </div>
+                <mtx-grid
+                class="grid-height"
+                #grid [data]="allRoles" 
+                [columns]="columns" 
+                [loading]="isLoading" 
+                [rowHover]="rowHover"
+                [rowStriped]="rowStriped" 
+                [columnSortable]="columnSortable" 
+                [pageOnFront]="showPaginator"
+                [showPaginator]="showPaginator" 
+                [pageSizeOptions]="[5,10,50,100]" 
+                [pageIndex]="pageNo" 
+                [pageSize]="pageSize"
+                [showFirstLastButtons]="false"
+                (page)="onPaginateChange($event)">
+                </mtx-grid>
+                <div style="margin-right: 5px;text-align: end;" >
+                    <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+    <div class="col-md-4">
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>{{editorTitle}}</mat-card-title>
+            </mat-card-header>
+
+            <hr>
+
+            <mat-card-content>
+                <form [formGroup]="roleForm" #formGroupDirective="ngForm" class="form-field-full">
+
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Role Name</mat-label>
+                        <input matInput placeholder="Name" formControlName="name" required>
+                        @if (roleForm.get('name')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                    </mat-form-field>
+
+
+                </form>
+
+                <mat-form-field>
+                    <mat-label>Select Feature</mat-label>
+                    <mtx-select [(ngModel)]="selectedFeatureOfRole" (ngModelChange)="onFeatureIdChange($event)"
+                        bindLabel="name" bindValue="id" [multiple]="true" appendTo="app-role-management">
+                        <mtx-option *ngFor="let feat of allFeatures" [value]="feat.id">{{ feat.name }}</mtx-option>
+                    </mtx-select>
+                </mat-form-field>
+
+
+                <div class="m-t-8 d-flex justify-content-end">
+                    <button mat-raised-button class="m-x-8" color="custom-green" (click)="addNew(formGroupDirective)"
+                        *ngIf="buttonText === 'Update'">Clear</button>
+                    <button [disabled]="!isFeatureFieldValid || roleForm.invalid" mat-raised-button color="primary"
+                        type="submit" (click)="onSubmit(formGroupDirective)">{{buttonText}}</button>
+                </div>
+
+            </mat-card-content>
+
+        </mat-card>
+    </div>
+</div>

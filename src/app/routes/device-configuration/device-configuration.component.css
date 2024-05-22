@@ -1,0 +1,44 @@
+#map {
+  border: none;
+  position: relative;
+  height: 540px;
+}
+.control-button {
+  background-color: #3ee5ec;
+  color: #fff;
+  border: 1px solid black;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.control-button.active {
+    background-color: #57f677;
+}
+.control-button.active:hover {
+    background-color: #3ca450;
+}
+.control-button:hover {
+  background-color: #2da9af;
+}
+.map_overlay {
+  position: relative;
+  width: 100%;
+  display: inline-block;
+  height: 100%;
+}
+.map_overlay .map_overlay_content {
+  position:absolute;
+  z-index: 2;
+  width: 100%;
+}
+
+.zone-sidenav {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+}
+.map-sidenav-container .map_draw_icons {
+  height: 30px;
+  width: 30px;
+}
+

@@ -1,0 +1,45 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row">
+  <div class="col-md-12">
+    <mat-card>
+      
+      <div style="display: flex; justify-content: flex-end;">
+      <mat-card-header style="margin: auto;padding: 2%;">
+        <mat-card-title>Tickets</mat-card-title>
+      </mat-card-header>
+      <div style="margin-top: 1%;">
+      <button mat-mini-fab >
+        <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
+    </div>
+      <mat-card-content>
+        <!-- <div style="padding: 7px;">
+          <input class="form-control" type="text" name="search"
+                 [(ngModel)]="searchTerm" autocomplete="off" #input
+                 placeholder="Search Product">
+      </div> -->
+
+        <mtx-grid   #grid [data]="list" class="grid-height"
+                  [columns]="columns"
+                  [loading]="isLoading"
+                  [rowHover]="rowHover"
+                  [rowStriped]="rowStriped"
+                  [columnSortable]="columnSortable"
+                  [pageOnFront]="showPaginator"
+                  [showPaginator]="showPaginator"
+                  [pageSizeOptions]="[5,10,50,100]"
+                  [pageIndex]="pageNo"
+                  [pageSize]="pageSize"
+                  [showFirstLastButtons]="false"             
+                  (page)="onPaginateChange($event)"
+                  >
+        </mtx-grid>
+        <div style="margin-right: 5px;text-align: end;" >
+          <!-- <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button> -->
+      </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  </div>

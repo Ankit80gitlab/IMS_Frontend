@@ -1,0 +1,18 @@
+<h1 mat-dialog-title>Add New Device</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <input placeholder="Device Name" matInput [(ngModel)]="data.device.name" />
+  </mat-form-field>
+  <small>Latitude</small>
+  <mat-form-field>
+    <input disabled placeholder="Latitude" matInput [(ngModel)]="data.device.lat" />
+  </mat-form-field>
+  <small>Longitude</small>
+  <mat-form-field>
+    <input disabled placeholder="Longitude" matInput [(ngModel)]="data.device.lon" />
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Cancel</button>
+  <button mat-button [mat-dialog-close]="data.device.name" cdkFocusInitial>Add</button>
+</div>

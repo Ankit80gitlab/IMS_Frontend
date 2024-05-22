@@ -1,0 +1,11 @@
+<h1 mat-dialog-title>Add New Area</h1>
+<div mat-dialog-content>
+    <small>Area Name</small>
+    <mat-form-field>
+        <input placeholder="Device Name" matInput [(ngModel)]="data.device.name" />
+    </mat-form-field>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onNoClick()">Cancel</button>
+    <button mat-button [mat-dialog-close]="data.device.name" cdkFocusInitial>Add</button>
+</div>

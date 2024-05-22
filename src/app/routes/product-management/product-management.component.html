@@ -1,0 +1,83 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row">
+  <div class="col-md-8">
+    <mat-card>
+      <mat-card-header style="margin: auto;padding: 2%;">
+        <mat-card-title>Products</mat-card-title>
+       
+      </mat-card-header>
+      <mat-card-content>
+        <div style="padding: 7px;">
+          <input class="form-control" type="text" name="search"
+                 [(ngModel)]="searchTerm" autocomplete="off" #input
+                 placeholder="Search Product">
+      </div>
+        <mtx-grid   #grid [data]="list" class="grid-height"
+                  [columns]="columns"
+                  [loading]="isLoading"
+                  [rowHover]="rowHover"
+                  [rowStriped]="rowStriped"
+                  [columnSortable]="columnSortable"
+                  [pageOnFront]="showPaginator"
+                  [showPaginator]="showPaginator"
+                  [pageSizeOptions]="[5,10,50,100]"
+                  [pageIndex]="pageNo"
+                  [pageSize]="pageSize"
+                  [showFirstLastButtons]="false"             
+                  (page)="onPaginateChange($event)"
+                  (sortChange)="changeSort($event)">
+        </mtx-grid>
+        <div style="margin-right: 5px;text-align: end;" >
+          <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button>
+      </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="col-md-4">
+    <mat-card>
+      <mat-card-header style="margin: auto;padding: 5%;">
+        <mat-card-title>{{editorTitle}}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="productForm" class="form-field-full" #formGroupDirective="ngForm">
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput placeholder="Name" formControlName="productName" required>
+            @if (productForm.get('productName')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Type</mat-label>
+            <mat-select required formControlName="productType" required>
+              <mat-option value="hardware">Hardware</mat-option>
+              <mat-option value="software">Software</mat-option>
+            </mat-select>
+            @if (productForm.get('productType')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Description</mat-label>
+            <input matInput placeholder="Name" formControlName="productDescription">
+          </mat-form-field>
+          <div class="m-t-8 d-flex justify-content-end" *ngIf="addStatus">
+            <!-- <button mat-button class="m-x-8" type="button">Cancel</button> -->
+            <button mat-raised-button color="primary" (click)="addProduct(formGroupDirective)">Save</button>
+          </div>
+          <div class="m-t-8 d-flex justify-content-end" *ngIf="!addStatus">
+            <div style="margin-right: 5px;">
+              <button mat-raised-button color="custom-green"  shape="round-button"(click)="addNew(formGroupDirective)">Clear</button>
+            </div>
+            <div >
+                <button mat-raised-button color="primary" class="round-button" (click)="updateProduct(formGroupDirective)">Update</button>
+            </div>
+          
+        </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  </div>

@@ -1,0 +1,148 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row">
+    <div class="col-md-8">
+        <mat-card>
+            <mat-card-header style="margin: auto;padding: 2%;">
+                <mat-card-title>USERS</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div style="padding: 7px;">
+                    <input class="form-control" type="text" name="search" [(ngModel)]="searchTerm" autocomplete="off"
+                        #input placeholder="Search User">
+                </div>
+                <div class="grid-height" (scroll)="onScroll($event)" #scrollableElement>
+                <mtx-grid  #grid [data]="allUsers" [columns]="columns" [loading]="isLoading"
+                    [rowHover]="rowHover" [rowStriped]="rowStriped" [columnSortable]="columnSortable"
+                    [pageOnFront]="showPaginator" [showPaginator]="showPaginator" [pageSizeOptions]="[5,10,50,100]"
+                    [pageIndex]="pageNo" [pageSize]="pageSize" [showFirstLastButtons]="false"
+                    (page)="onPaginateChange($event)">
+                </mtx-grid>
+            </div>
+                <div style="margin-right: 5px;text-align: end;">
+                    <!-- <button mat-raised-button color="primary" class="round-button" (click)="Fetch()">Fetch</button> -->
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <div class="col-md-4">
+        <mat-card>
+            <mat-card-header style="margin: auto;padding: 5%;">
+                <mat-card-title>{{editorTitle}}</mat-card-title>
+            </mat-card-header>
+
+
+            <mat-card-content>
+                <form [formGroup]="userForm" #formGroupDirective="ngForm" class="form-field-full">
+
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Name</mat-label>
+                        <input matInput placeholder="Name" formControlName="name" required>
+                        @if (userForm.get('name')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Username</mat-label>
+                        <input matInput placeholder="Username" formControlName="username" required>
+                        @if (userForm.get('username')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Email</mat-label>
+                        <input matInput placeholder="Email" formControlName="email" required>
+                        @if (userForm.get('email')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <div *ngIf="arePasswordfieldsRequired">
+
+                        <mat-form-field class="m-r-8" appearance="outline">
+                            <mat-label>Password</mat-label>
+                            <input type="password" matInput placeholder="Password" formControlName="password" required>
+                            @if (userForm.get('password').invalid && userForm.get('password').touched &&
+                            userForm.get('password').errors.required) {
+                            <mat-error>This field is required</mat-error>
+                            }
+                            @if (userForm.get('password').invalid && userForm.get('password').touched &&
+                            userForm.get('password').errors.minlength) {
+                            <mat-error>Password must be at least 6 characters long</mat-error>
+                            }
+
+                        </mat-form-field>
+
+                        <mat-form-field class="m-r-8" appearance="outline">
+                            <mat-label>Confirm Password</mat-label>
+                            <input type="password" matInput placeholder="Confirm Password"
+                                formControlName="confirmPassword" required>
+                            @if (userForm.get('confirmPassword').invalid && userForm.get('confirmPassword').touched &&
+                            userForm.get('confirmPassword').errors.required) {
+                            <mat-error>This field is required</mat-error>
+                            }
+                            @if (userForm.get('confirmPassword').invalid && userForm.get('confirmPassword').touched &&
+                            userForm.get('confirmPassword').errors.passwordMismatch) {
+                            <mat-error>Passwords does not match</mat-error>
+                            }
+
+                        </mat-form-field>
+
+                    </div>
+
+                </form>
+
+                <mat-form-field>
+                    <mat-label>Select Role</mat-label>
+                    <mtx-select [(ngModel)]="selectedRole" (ngModelChange)="onRoleSelectionChange($event)"
+                        bindLabel="name" bindValue="id" [multiple]="false" appendTo="app-user-management">
+                        <mtx-option *ngFor="let role of allRoles" [value]="role.id">{{ role.roleName | uppercase
+                            }}</mtx-option>
+                    </mtx-select>
+                </mat-form-field>
+
+                <form [formGroup]="customerForm" #formGroupDirective="ngForm" class="form-field-full">
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Select Customer</mat-label>
+                        <mtx-select [(value)]="fetchedCustomer" [items]="customer$ | async" bindLabel="name"
+                            bindValue="id" [virtualScroll]="true" (scrollToEnd)="onScrollEnd()"
+                            [compareWith]="compareFn" (search)="onSearch($event)" [loading]="loading"
+                            [searchable]="true" formControlName="customerId" (change)="onCustomerSelectionChange()">
+                        </mtx-select>
+                    </mat-form-field>
+                </form>
+
+                <!-- <mat-form-field>
+                    <mat-label>Select Customer</mat-label>
+                    <mtx-select [(ngModel)]="selectedCustomerId" (ngModelChange)="onCustomerSelectionChange()"
+                        bindLabel="name" bindValue="id" [multiple]="false" appendTo="app-user-management">
+                        <mtx-option *ngFor="let customer of allCustomers" [value]="customer.id">{{ customer.name | uppercase
+                            }}</mtx-option>
+                    </mtx-select>
+                </mat-form-field> -->
+
+                <mat-form-field *ngIf="foundCustomerProduct">
+                    <mat-label>Products</mat-label>
+                    <mtx-select [(ngModel)]="selectedProductIds" disabled bindLabel="name" bindValue="id"
+                        [multiple]="true" appendTo="app-user-management">
+                        <mtx-option *ngFor="let product of allCustomerProduct" [value]="product.id">{{ product.name |
+                            uppercase
+                            }}</mtx-option>
+                    </mtx-select>
+                </mat-form-field>
+
+
+                <div class="m-t-8 d-flex justify-content-end">
+                    <button mat-raised-button class="m-x-8" color="custom-green" (click)="addNew(formGroupDirective)"
+                        *ngIf="buttonText === 'Update'">Clear</button>
+                    <button [disabled]="!isRoleFieldValid || userForm.invalid" mat-raised-button color="primary"
+                        type="submit" (click)="onSubmit(formGroupDirective)">{{buttonText}}</button>
+                </div>
+
+            </mat-card-content>
+
+        </mat-card>
+    </div>
+</div>

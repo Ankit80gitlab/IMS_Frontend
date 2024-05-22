@@ -1,0 +1,91 @@
+{
+  "menu": [
+
+    {
+      "route": "/",
+      "name": "Overview",
+      "type": "sub",
+      "icon": "dashboard",
+      "permissions": {"only": ["Dashboard", "MapView"]},
+      "children": [
+        {
+          "route": "dashboard",
+          "name": "Dashboard",
+          "type": "link",
+          "permissions": {"only": ["Dashboard"]}
+        },
+        {
+          "route": "mapView",
+          "name": "MapView",
+          "type": "link",
+          "permissions": {"only": ["MapView"]}
+        }
+      ]
+    },
+    {
+      "route": "productManagement",
+      "name": "Product_Management",
+      "type": "link",
+      "icon": "add_shopping_cart",
+      "permissions": {"only": ["Product Management"]}
+    },
+    {
+      "route": "deviceConfiguration",
+      "name": "Device_Configuration",
+      "type": "link",
+      "icon": "devices",
+      "permissions": {"only": ["Device Configuration"]}
+    },
+    {
+      "route": "customerManagement",
+      "name": "Customer_Management",
+      "type": "link",
+      "icon": "work",
+      "permissions": {"only": ["Customer Management"]}
+    },
+    {
+      "route": "ticketManagement",
+      "name": "Ticket_Management",
+      "type": "link",
+      "icon": "note",
+      "permissions": {"only": ["Ticket Management"]}
+    },
+    {
+      "route": "userManagement",
+      "name": "User_Management",
+      "type": "link",
+      "icon": "person",
+      "permissions": {"only": ["User Management"]}
+    },
+    {
+      "route": "roleManagement",
+      "name": "Role_Management",
+      "type": "link",
+      "icon": "person",
+      "permissions": {"only": ["Role Management"]}
+    },
+    {
+      "route": "/",
+      "name": "REPORTS",
+      "type": "sub",
+      "icon": "book",
+      "children": [
+        {
+          "route": "403",
+          "name": "REPORT1",
+          "type": "link"
+        },
+        {
+          "route": "404",
+          "name": "REPORT2",
+          "type": "link"
+        },
+        {
+          "route": "500",
+          "name": "REPORT3",
+          "type": "link"
+        }
+      ]
+    }
+  ]
+}

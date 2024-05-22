@@ -1,0 +1,80 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row">
+  <div class="col-md-8">
+    <mat-card>
+      <mat-card-header style="margin:auto;padding: 2%;">
+        <mat-card-title>Customers</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mtx-grid #grid [data]="list" class="grid-height"
+                  [columns]="columns"
+                  [loading]="isLoading"
+                  [rowHover]="rowHover"
+                  [rowStriped]="rowStriped"
+                  [columnSortable]="columnSortable"
+                  [pageOnFront]="showPaginator"
+                  [showPaginator]="showPaginator"
+                  [pageSizeOptions]="[5,10,50,100]"
+                  [pageIndex]="0"
+                  [pageSize]="pageSize"
+                  (page)="onPaginateChange($event)"
+                  (sortChange)="changeSort($event)">
+        </mtx-grid>
+        <div style="margin-right: 5px;text-align: end;">
+          <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button>
+      </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="col-md-4">
+    <mat-card>
+      <mat-card-header style="margin: auto;padding: 5%;">
+        <mat-card-title>{{editorTitle}}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="customerForm" #formGroupDirective="ngForm" class="form-field-full" >
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Username</mat-label>
+            <input matInput placeholder="Name" formControlName="name" required>
+            @if (customerForm.get('name')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>State</mat-label>
+            <mat-select required formControlName="state" required>
+              <mat-option>-- None --</mat-option>
+              <mat-option value="Kerala">Kerala</mat-option>
+              <mat-option value="Tamilnadu">Tamilnadu</mat-option>
+            </mat-select>
+            @if (customerForm.get('state')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>City</mat-label>
+            <input matInput placeholder="Name" formControlName="city" required>
+            @if (customerForm.get('city')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Select Products</mat-label>
+            <mtx-select [items]="products" bindLabel="productName" bindValue="id" [multiple]="true" [searchable]="true"
+                formControlName="productIds">
+            </mtx-select>
+            <mat-hint>Choose Products </mat-hint>
+        </mat-form-field>
+
+          <div class="m-t-8 d-flex justify-content-end">
+            <button mat-raised-button class="m-x-8" color="custom-green" (click) = "addNew(formGroupDirective)"
+                    *ngIf="buttonText === 'Update'">Clear</button>
+            <button mat-raised-button color="primary"  (click)="addCustomer(formGroupDirective)">{{buttonText}}</button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

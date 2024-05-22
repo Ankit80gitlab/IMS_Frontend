@@ -1,0 +1,48 @@
+/* You can add global styles to this file, and also import other style files */
+//@use 'app/theme/style';
+@use 'styles/themes';
+@use 'styles/custom';
+@use 'styles/grid';
+@use 'styles/helpers';
+@use 'styles/plugins';
+@use "@coreui/coreui/scss/coreui";
+@use 'app/theme/style/reboot';
+@use 'app/theme/style/colors';
+@use 'app/theme/style/scrollbar';
+
+.theme-dark {
+  button.mat-mdc-raised-button.mat-custom-green {
+    color: white;
+    background-color: #55c955;
+  }
+}
+button.mat-mdc-raised-button.mat-custom-green {
+  color: white;
+  background-color: green;
+}
+
+.scrollbar-thin {
+  @include scrollbar.thin();
+}
+
+.scrollbar-none {
+  @include scrollbar.none();
+}
+
+/*@media (width <= 720px) {
+  .hide-small {
+    display: none !important;
+  }
+
+  .show-small {
+    display: block !important;
+  }
+}*/
+
+#map .ol-zoom {
+  top: 10.5em !important;
+}
+
+#map .ol-zoomslider {
+  top: 14.5em !important;
+}
