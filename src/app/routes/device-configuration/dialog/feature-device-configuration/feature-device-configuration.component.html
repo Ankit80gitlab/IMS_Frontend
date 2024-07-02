@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>{{saveBtnText}} Device</h2>
+<mat-divider></mat-divider>
+<mat-dialog-content>
+    <form [formGroup]="deviceForm" #formGroupDirective="ngForm" class="form-field-full">
+        <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Area</mat-label>
+            <mtx-select [items]="areas" bindLabel="name" bindValue="id"
+                        [searchable]="false" (change)="onAreaSelectionChange($event);"
+                        formControlName="areaId">
+            </mtx-select>
+            @if (deviceForm.get('areaId')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+        </mat-form-field>
+        <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput placeholder="Name" formControlName="name" required>
+            @if (deviceForm.get('name')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+        </mat-form-field>
+        <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>UID</mat-label>
+            <input matInput placeholder="UID" formControlName="uid" required>
+            @if (deviceForm.get('uid')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+        </mat-form-field>
+        <div class="row">
+            <div class="col-md-6">
+                <mat-form-field class="m-r-8" appearance="outline">
+                    <mat-label>Latitude</mat-label>
+                    <input matInput placeholder="Name" formControlName="lat" required>
+                    @if (deviceForm.get('lat')?.invalid) {
+                    <mat-error>This field is required</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+            <div class="col-md-6">
+                <mat-form-field class="m-r-8" appearance="outline">
+                    <mat-label>Longitude</mat-label>
+                    <input matInput placeholder="Name" formControlName="lon" required>
+                    @if (deviceForm.get('lon')?.invalid) {
+                    <mat-error>This field is required</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+        </div>
+        <mat-form-field class="m-r-8" appearance="outline">
+            <mat-label>Product</mat-label>
+            <mtx-select [items]="product$ | async" bindLabel="productName" bindValue="id"
+                        [virtualScroll]="true" (scrollToEnd)="onScrollEnd()"
+                        (search)="onSearch($event)" [loading]="loading"
+                        [searchable]="true"
+                        formControlName="productId" (change)="onSelectionChange($event);">
+            </mtx-select>
+            @if (deviceForm.get('productId')?.invalid) {
+            <mat-error>This field is required</mat-error>
+            }
+        </mat-form-field>
+        <mat-divider class="m-y-16"></mat-divider>
+        <div class="container-fluid">
+            <div class="row">
+                <button class="col-sm-4" mat-raised-button color="custom-green" (click)="onCloseClick(formGroupDirective)">Close</button>
+                <button class="col-sm-4" mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button>
+                <button class="col-sm-4" mat-raised-button color="primary" (click)="onSaveClick()">{{saveBtnText}}</button>
+            </div>
+        </div>
+    </form>
+</mat-dialog-content>

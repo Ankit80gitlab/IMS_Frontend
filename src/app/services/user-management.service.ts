@@ -15,10 +15,17 @@ export class UserManagementService {
     updateUser_url = "/userManagement/updateUser";
     changeUserPassword_url = "/userManagement/changePassword"
     removeUser_url = "/userManagement/removeUser";
-    searchUser_url = "/userManagement/searchUser";
+    getAllUsersBasicDetailsUrl = "/userManagement/getAllUsersBasicDetails";
+    getAllCustomerUsersBasicDetailsUrl = "/userManagement/getAllUsersOfCustomer";
+    getAllTypesForUser_url = "/userManagement/getAllTypesForUser";
 
-    getAllUser(pageNo: any, pageSize: any): Observable<any> {
+    me() {
+        return this.httpClient.get('/getUserInfo');
+    }
+
+    getAllUser(searchByName: any, pageNo: any, pageSize: any): Observable<any> {
         const params = new HttpParams()
+            .set('searchByName', searchByName)
             .set('pageNo', pageNo.toString())
             .set('pageSize', pageSize.toString());
         const httpOptions = {
@@ -54,18 +61,39 @@ export class UserManagementService {
         return this.httpClient.post(this.removeUser_url, body.toString(), { headers });
     }
 
-    searchUser(name: any, pageNo: any, pageSize: any): Observable<any> {
+    getAllUsersBasicDetails(searchByName: string, pageNo: number, pageSize: number): Observable<any> {
         const params = new HttpParams()
-            .set('userName', name)
-            .set('pageNo', pageNo)
-            .set('pageSize', pageSize);
+            .set('searchByName', searchByName)
+            .set('pageNo', pageNo.toString())
+            .set('pageSize', pageSize.toString());
         const httpOptions = {
             params: params
         };
-        return this.httpClient.get(this.searchUser_url, httpOptions);
+        return this.httpClient.get(this.getAllUsersBasicDetailsUrl, httpOptions);
     }
 
+    getAllCustomerUsersBasicDetails(customerId: number, searchByName: string, pageNo: number, pageSize: number): Observable<any> {
+        const params = new HttpParams()
+            .set('customerId', customerId)
+            .set('searchByName', searchByName)
+            .set('pageNo', pageNo.toString())       
+            .set('pageSize', pageSize.toString());
+        const httpOptions = {
+            params: params
+        };
+        return this.httpClient.get(this.getAllCustomerUsersBasicDetailsUrl, httpOptions);
+    }
 
+    getAllTypesForUser(name:any,pageNo:any,pageSize:any):Observable<any>{
+        const params = new HttpParams()
+        .set('name', name)
+        .set('pageNo', pageNo.toString())       
+        .set('pageSize', pageSize.toString());
+    const httpOptions = {
+        params: params
+    };
+        return this.httpClient.get(this.getAllTypesForUser_url, httpOptions);
+    }
 
 
 }

@@ -1,5 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
-.grid-height{
+.grid-height {
   height: 500px;
-  overflow-y:scroll;
-  }
+  overflow-y: scroll;
+}
+

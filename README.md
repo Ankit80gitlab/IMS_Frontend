@@ -33,3 +33,7 @@ https://github.com/ng-matero/ng-matero
 https://ng-matero.github.io/ng-matero/
 https://ng-matero.github.io/extensions/components/categories
 https://github.com/ng-matero/ng-matero
+
+
+npm install @stomp/ng2-stompjs @stomp/stompjs
+npm i @stomp/stompjs@5.4.4

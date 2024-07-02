@@ -4,77 +4,42 @@
     <mat-sidenav-container class="map-sidenav-container">
       <mat-sidenav-content role="region">
         <div class="row">
-          <div class="col-md-12">
-            <div class="row">
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button [ngClass]="{ 'active': zoneDraw.getActive()}"
-                            class="control-button" (click)="addZoneClick()" matTooltip="Add Zone">
-                      <img src="./assets/images/map-icons/map-marker.png" class="map_draw_icons">
-                    </button>
-                  </p>
+            <div class="col-md-12">
+                <div class="map-draw-icon-container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button [ngClass]="{ 'active': zoneDraw.getActive()}"
+                                    class="control-button" (click)="addZoneClick()" matTooltip="Add Zone">
+                                <img src="./assets/images/map-icons/zone-add.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': zoneEditActive}"
+                                    class="control-button" (click)="editZoneClick(undefined)" matTooltip="Edit Zone">
+                                <img src="./assets/images/map-icons/zone-edit.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': areaDraw.getActive()}"
+                                    class="control-button" (click)="addAreaClick()" matTooltip="Add Area">
+                                <img src="./assets/images/map-icons/area-add.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': areaEditActive}"
+                                    class="control-button" matTooltip="Edit Area" (click)="editAreaClick(undefined)">
+                                <img src="./assets/images/map-icons/area-edit.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': deviceDraw.getActive()}"
+                                    class="control-button" matTooltip="Add Device" (click)="addDeviceClick()">
+                                <img src="./assets/images/map-icons/device-add.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': deviceEditActive}"
+                                    class="control-button" (click)="editDeviceClick(undefined)" matTooltip="Edit Device">
+                                <img src="./assets/images/map-icons/device-edit.png" class="map_draw_icons">
+                            </button>
+                            <button [ngClass]="{ 'active': endSnav.opened}"
+                                    class="control-button" (click)="endSnav.toggle()" matTooltip="Menu">
+                                <img src="./assets/images/map-icons/menu.png" class="map_draw_icons">
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button [ngClass]="{ 'active': zoneEditActive}"
-                            class="control-button" (click)="editZoneClick()" matTooltip="Edit Zone">
-                      <img src="./assets/images/map-icons/design.png" class="map_draw_icons">
-                    </button>
-                  </p>
-                </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button class="control-button" (click)="addAreaClick()" matTooltip="Add Area">
-                      <img src="./assets/images/map-icons/shape.png" class="map_draw_icons">
-                    </button>
-                  </p>
-                </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button class="control-button" matTooltip="Edit Area" (click)="editAreaClick()">
-                      <img src="./assets/images/map-icons/map.png" class="map_draw_icons">
-                    </button>
-                  </p>
-                </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button class="control-button" matTooltip="Add Device" (click)="addDeviceClick()">
-                      <img src="./assets/images/map-icons/cpu2.png" class="map_draw_icons">
-                    </button>
-                  </p>
-                </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button class="control-button" (click)="editDeviceClick()" matTooltip="Edit Device">
-                      <img src="./assets/images/map-icons/cpu.png" class="map_draw_icons">
-                    </button>
-                  </p>
-                </div>
-              </div>
-              <div class="col-4 col-sm-3 col-md-2 col-xl-1">
-                <div class="text-center m-t-12 m-b-24">
-                  <p class="f-s-12">
-                    <button mat-icon-button aria-label="Playlist menu" (click)="endSnav.toggle()">
-                      <mat-icon aria-hidden="true">toc</mat-icon>
-                    </button>
-                  </p>
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
-        <div class="row">
           <div class="col-md-12">
             <div #map id="map" class="map"></div>
           </div>
@@ -86,13 +51,30 @@
             <mat-label>Zone</mat-label>
               <mtx-select [items]="zoneArray$ | async" bindLabel="name" bindValue="id"
                           [(ngModel)]="selectedZone"
-                          [virtualScroll] = "true" (scrollToEnd)="onZoneScrollEnd()"
-                          (search)="onZoneSearch($event)" [loading]="zoneLoading"
+                          [virtualScroll] = "true"
                           [searchable]="true"
                           (change)="onZoneSelect($event)">
               </mtx-select>
           </mat-form-field>
           <mat-divider class="m-y-16"></mat-divider>
+          <mat-form-field class="w-full">
+            <mat-label>Area</mat-label>
+            <mtx-select [items]="areaArray$ | async" bindLabel="name" bindValue="id"
+                        [(ngModel)]="selectedArea"
+                        [virtualScroll] = "true"
+                        [searchable]="true"
+                        (change)="onAreaSelect($event)">
+            </mtx-select>
+          </mat-form-field>
+            <mat-form-field class="w-full">
+                <mat-label>Device</mat-label>
+                <mtx-select [items]="deviceArray$ | async" bindLabel="name" bindValue="id"
+                            [(ngModel)]="selectedDevice"
+                            [virtualScroll] = "true"
+                            [searchable]="true"
+                            (change)="onDeviceSelect($event)">
+                </mtx-select>
+            </mat-form-field>
         </mat-nav-list>
       </mat-sidenav>
     </mat-sidenav-container>

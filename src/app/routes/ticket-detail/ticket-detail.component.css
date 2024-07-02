@@ -1,0 +1,23 @@
+
+  .text-tile{
+    margin-left: 5%;
+  }
+  .editor-color{
+    color: black !important;border: 2px solid #d1cece;
+  }
+  .input_fileupload--hidden{
+    display:none;
+  }
+  .full-width {
+    width: 100%;
+  }
+  .bordered-div {
+    border: 2px solid #2b2727; /* Change the color and width as needed */
+    padding: 50px; /* Optional: Adds padding inside the div */
+    margin: 10px; /* Optional: Adds margin outside the div */
+    width: 300px; /* Optional: Sets a fixed width for the div */
+    height: 150px; /* Optional: Sets a fixed height for the div */
+}
+.mx-width{
+  max-width:300px !important
+}

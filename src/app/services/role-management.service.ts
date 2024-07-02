@@ -15,28 +15,28 @@ export class RoleManagementService {
     createNewRole_url = "/roleManagement/createRole";
     updateRole_url = "/roleManagement/updateRole";
     removeRole_url = "/roleManagement/deleteRole";
-    getAllRoleBasicDetailsUrl = "/roleManagement/getRoles";
-    searchRole_url = "/roleManagement/searchRole";
+    // getAllRolesIdAndName_url = "/roleManagement/getRoles";
+    // searchRole_url = "/roleManagement/searchRole";
+    getAllRoleBasic_url = "/roleManagement/getAllRolesBasicDetails";
 
 
-    getAllRoles(pageNo: any, pageSize: any): Observable<any> {
+    getAllRoles(searchByName:any, pageNo: any, pageSize: any): Observable<any> {
         const params = new HttpParams()
             .set('pageNo', pageNo.toString())
-            .set('pageSize', pageSize.toString());
+            .set('pageSize', pageSize.toString())
+            .set('searchByName', searchByName.toString());
         const httpOptions = {
             params: params
         };
         return this.httpClient.get(this.getAllRoles_url, httpOptions);
     }
+ 
+    getAllUserRolesBasicDetails(): Observable<any> {
+        return this.httpClient.get(this.getAllRoleBasic_url);
+    }
 
     getAllFeatures(pageNo: any, pageSize: any): Observable<any> {
-        const params = new HttpParams()
-            .set('pageNo', pageNo.toString())
-            .set('pageSize', pageSize.toString());
-        const httpOptions = {
-            params: params
-        };
-        return this.httpClient.get(this.getAllFeatures_url, httpOptions);
+        return this.httpClient.get(this.getAllFeatures_url);
     }
 
     createNewRole(role: any): Observable<any> {
@@ -47,9 +47,9 @@ export class RoleManagementService {
         return this.httpClient.post(this.updateRole_url, role);
     }
 
-    getAllRoleBasicDetails(): Observable<any> {
-        return this.httpClient.get(this.getAllRoleBasicDetailsUrl);
-    }
+    // getAllRolesIdAndName(): Observable<any> {
+    //     return this.httpClient.get(this.getAllRolesIdAndName_url);
+    // }
 
     removeExistingRole(roleId: any): Observable<any> {
         const body = new URLSearchParams();
@@ -60,16 +60,16 @@ export class RoleManagementService {
         return this.httpClient.post(this.removeRole_url, body.toString(), { headers });
     }
 
-    searchRole(name: any, pageNo: any, pageSize: any): Observable<any> {
-        const params = new HttpParams()
-            .set('roleName', name)
-            .set('pageNo', pageNo)
-            .set('pageSize', pageSize);
-        const httpOptions = {
-            params: params
-        };
-        return this.httpClient.get(this.searchRole_url, httpOptions);
-    }
+    // searchRole(name: any, pageNo: any, pageSize: any): Observable<any> {
+    //     const params = new HttpParams()
+    //         .set('roleName', name)
+    //         .set('pageNo', pageNo)
+    //         .set('pageSize', pageSize);
+    //     const httpOptions = {
+    //         params: params
+    //     };
+    //     return this.httpClient.get(this.searchRole_url, httpOptions);
+    // }
 
 
 }

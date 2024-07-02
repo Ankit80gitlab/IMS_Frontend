@@ -7,37 +7,49 @@
       <mat-card-header style="margin: auto;padding: 2%;">
         <mat-card-title>Tickets</mat-card-title>
       </mat-card-header>
-      <div style="margin-top: 1%;">
-      <button mat-mini-fab >
-        <mat-icon>filter_list</mat-icon>
-    </button>
-  </div>
+      <div style="margin-top: 5px;">
+        <button mat-raised-button class="menuTrigger" (click)="addNew()" >
+          New  <mat-icon style="color: #26a331;">add_circle</mat-icon>
+        </button>
+      </div>
+      <div style="margin: 5px 7px;">
+      <button mat-raised-button class="menuTrigger" [matMenuTriggerFor]="filter_menu" >
+        filter <mat-icon>filter_list</mat-icon>
+      </button>
+    </div>
+<mat-menu #filter_menu="matMenu">
+  <button mat-menu-item [matMenuTriggerFor]="type_menu">Type ({{selectedCount.selectedtypeCount}})</button>
+  <button mat-menu-item [matMenuTriggerFor]="priority_menu">Priority ({{selectedCount.selectedPriorityCount}})</button>
+  <!-- <button mat-menu-item [matMenuTriggerFor]="reptiles_menu">Reptiles ({{selectedReptileCount}})</button> -->
+</mat-menu>
+<mat-menu #type_menu="matMenu">
+  <button mat-menu-item *ngFor="let type of types" (click)="selectFilter($event, type)">
+    <mat-icon color="{{type.selected?'primary':''}}">{{type.selected?'check_box':'check_box_outline_blank'}}</mat-icon>{{type.name}}
+  </button>
+</mat-menu>
+<mat-menu #priority_menu="matMenu">
+  <button mat-menu-item *ngFor="let priority of prioritys" (click)="selectFilter($event, priority)">
+    <mat-icon color="{{priority.selected?'primary':''}}">{{priority.selected?'check_box':'check_box_outline_blank'}}</mat-icon>{{priority.name}}
+  </button>
+</mat-menu>
     </div>
       <mat-card-content>
-        <!-- <div style="padding: 7px;">
+        <div style="padding: 7px;">
           <input class="form-control" type="text" name="search"
                  [(ngModel)]="searchTerm" autocomplete="off" #input
-                 placeholder="Search Product">
-      </div> -->
+                 placeholder="Search Ticket">
+      </div>
 
         <mtx-grid   #grid [data]="list" class="grid-height"
-                  [columns]="columns"
-                  [loading]="isLoading"
-                  [rowHover]="rowHover"
-                  [rowStriped]="rowStriped"
-                  [columnSortable]="columnSortable"
-                  [pageOnFront]="showPaginator"
-                  [showPaginator]="showPaginator"
-                  [pageSizeOptions]="[5,10,50,100]"
-                  [pageIndex]="pageNo"
-                  [pageSize]="pageSize"
-                  [showFirstLastButtons]="false"             
-                  (page)="onPaginateChange($event)"
-                  >
+        [columns]="columns"
+        [loading]="isLoading"
+        [rowHover]="rowHover"
+        [rowStriped]="rowStriped"
+        [columnSortable]="columnSortable"
+        [pageOnFront]="showPaginator"
+        [showPaginator]="false"
+        >
         </mtx-grid>
-        <div style="margin-right: 5px;text-align: end;" >
-          <!-- <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button> -->
-      </div>
       </mat-card-content>
     </mat-card>
   </div>

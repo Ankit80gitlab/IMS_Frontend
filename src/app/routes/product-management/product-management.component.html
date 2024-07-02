@@ -4,32 +4,17 @@
     <mat-card>
       <mat-card-header style="margin: auto;padding: 2%;">
         <mat-card-title>Products</mat-card-title>
-       
+
       </mat-card-header>
       <mat-card-content>
         <div style="padding: 7px;">
-          <input class="form-control" type="text" name="search"
-                 [(ngModel)]="searchTerm" autocomplete="off" #input
-                 placeholder="Search Product">
-      </div>
-        <mtx-grid   #grid [data]="list" class="grid-height"
-                  [columns]="columns"
-                  [loading]="isLoading"
-                  [rowHover]="rowHover"
-                  [rowStriped]="rowStriped"
-                  [columnSortable]="columnSortable"
-                  [pageOnFront]="showPaginator"
-                  [showPaginator]="showPaginator"
-                  [pageSizeOptions]="[5,10,50,100]"
-                  [pageIndex]="pageNo"
-                  [pageSize]="pageSize"
-                  [showFirstLastButtons]="false"             
-                  (page)="onPaginateChange($event)"
-                  (sortChange)="changeSort($event)">
+          <input class="form-control" type="text" name="search" [(ngModel)]="searchTerm" autocomplete="off" #input
+            placeholder="Search Product">
+        </div>
+        <mtx-grid #grid [data]="list" class="grid-height" [columns]="columns" [loading]="isLoading"
+          [rowHover]="rowHover" [rowStriped]="rowStriped" [columnSortable]="columnSortable"
+          [pageOnFront]="showPaginator" [showPaginator]="false" (sortChange)="changeSort($event)">
         </mtx-grid>
-        <div style="margin-right: 5px;text-align: end;" >
-          <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button>
-      </div>
       </mat-card-content>
     </mat-card>
   </div>
@@ -63,21 +48,32 @@
             <mat-label>Description</mat-label>
             <input matInput placeholder="Name" formControlName="productDescription">
           </mat-form-field>
+
+
+          <div>
+            <button mat-raised-button class="m-x-8" color="custom-green" (click)="addIncidentType()">{{incidentTitle}}</button>
+          </div>
+
+          <br>
+
+
           <div class="m-t-8 d-flex justify-content-end" *ngIf="addStatus">
-            <!-- <button mat-button class="m-x-8" type="button">Cancel</button> -->
-            <button mat-raised-button color="primary" (click)="addProduct(formGroupDirective)">Save</button>
+            <button [disabled]="!productForm.valid" mat-raised-button color="primary"
+              (click)="addProduct(formGroupDirective)">Save</button>
           </div>
           <div class="m-t-8 d-flex justify-content-end" *ngIf="!addStatus">
             <div style="margin-right: 5px;">
-              <button mat-raised-button color="custom-green"  shape="round-button"(click)="addNew(formGroupDirective)">Clear</button>
+              <button mat-raised-button color="custom-green" shape="round-button"
+                (click)="addNew(formGroupDirective)">Clear</button>
             </div>
-            <div >
-                <button mat-raised-button color="primary" class="round-button" (click)="updateProduct(formGroupDirective)">Update</button>
+            <div>
+              <button [disabled]="!productForm.valid" mat-raised-button color="primary" class="round-button"
+                (click)="updateProduct(formGroupDirective)">Update</button>
             </div>
-          
-        </div>
+
+          </div>
         </form>
       </mat-card-content>
     </mat-card>
   </div>
-  </div>
+</div>

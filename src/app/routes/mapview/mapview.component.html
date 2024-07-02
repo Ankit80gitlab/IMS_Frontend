@@ -1,17 +1,39 @@
-<!-- <page-header class="bg-green-600"></page-header> -->
-<div #map id='map' class='map' (click)="getCoordinates($event)">
-    <section class="custom-button">
-        
-        <mat-slide-toggle color="accent" checked="true" disabled="false">
-            <strong style="color: black; background-color:white;">SHOW DEVICES</strong>
-        </mat-slide-toggle>
-        &nbsp;
-        <mat-slide-toggle color="accent" checked="false" disabled="false">
-            <strong style="color: black; background-color:white;">SHOW AREAS</strong>
-        </mat-slide-toggle>
-        &nbsp;
-        <mat-slide-toggle color="accent" checked="false" disabled="false">
-            <strong style="color: black; background-color:white;">SHOW ZONES</strong>
-        </mat-slide-toggle>
-    </section>
+<page-header class="bg-green-600"></page-header>
+<div class="container-fluid">
+    <div class="row">
+        <mat-sidenav-container class="map-sidenav-container">
+            <mat-sidenav-content>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="map-draw-icon-container">
+                            <div class="row">
+                                <div class="col-md-12">
+
+                                    <button [ngClass]="{ 'active': enableDeviceView==true}" class="control-button"
+                                        matTooltip="Show Devices">
+                                        <img src="./assets/images/map-icons/device-add.png" class="map_draw_icons">
+                                    </button>
+                                    <button [ngClass]="{ 'active': enableAreaView==true}" class="control-button"
+                                        matTooltip="Show Areas" (click)="onAreaToggleChange()">
+                                        <img src="./assets/images/map-icons/area-add.png" class="map_draw_icons">
+                                    </button>
+                                    <button [ngClass]="{ 'active': enableZoneView==true}" class="control-button"
+                                        matTooltip="Show Zones" (click)="onZoneToggleChange()">
+                                        <img src="./assets/images/map-icons/zone-add.png" class="map_draw_icons">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div #map id="map" class="map"></div>
+                        <div id="popup" class="ol-popup">
+                            <a id="popup-closer" class="ol-popup-closer" (click)="popupCloser()"></a>
+                            <div id="popup-content" style="color: black;"></div>
+                        </div>
+                    </div>
+                </div>
+            </mat-sidenav-content>
+        </mat-sidenav-container>
+    </div>
 </div>

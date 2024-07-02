@@ -10,6 +10,7 @@ export interface AppSettings {
   sidenavOpened: boolean;
   sidenavCollapsed: boolean;
   language: string;
+  showPageHeader: boolean;
 }
 
 export const defaults: AppSettings = {
@@ -22,4 +23,5 @@ export const defaults: AppSettings = {
   sidenavOpened: true,
   sidenavCollapsed: false,
   language: 'en-US',
+  showPageHeader:false
 };

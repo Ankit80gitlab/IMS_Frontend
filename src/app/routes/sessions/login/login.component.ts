@@ -60,7 +60,7 @@ export class LoginComponent {
       .login(this.username.value, this.password.value)
       .pipe(filter(authenticated => authenticated))
       .subscribe({
-        next: () => {          
+        next: () => {
           this.router.navigateByUrl('/');
         },
         error: (errorRes: HttpErrorResponse) => {

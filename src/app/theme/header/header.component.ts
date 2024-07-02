@@ -40,10 +40,13 @@ export class HeaderComponent {
 
   @Output() toggleSidenav = new EventEmitter<void>();
   @Output() toggleSidenavNotice = new EventEmitter<void>();
-
-  darkTheme: boolean = false;
   private readonly settings = inject(SettingsService);
-
+  
+  darkTheme: boolean=this.settings.themeColor == 'dark' ? true : false;
+  ngOnInit() {
+    this.darkTheme=this.settings.themeColor == 'dark' ? true : false; 
+    console.log("dark", this.darkTheme)
+  }
   toggleFullscreen() {
     if (screenfull.isEnabled) {
       screenfull.toggle();
@@ -52,11 +55,11 @@ export class HeaderComponent {
 
   darkMode(){
     if(this.darkTheme){
-      this.settings.themeColor="dark";
-      this.settings.options.theme ="dark"
-    }else{
       this.settings.themeColor="light";
       this.settings.options.theme ="light"
+    }else{
+      this.settings.themeColor="dark";
+      this.settings.options.theme ="dark"
     }
      this.darkTheme=!this.darkTheme;
      this.settings.setTheme();

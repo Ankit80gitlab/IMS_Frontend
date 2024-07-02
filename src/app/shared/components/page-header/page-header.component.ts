@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-
-import { MenuService } from '@core';
+import {CommonModule} from '@angular/common';
+import {MenuService, SettingsService} from '@core';
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component';
 
 @Component({
@@ -19,13 +19,16 @@ import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component';
   styleUrls: ['./page-header.component.scss'],
   encapsulation: ViewEncapsulation.None,
   standalone: true,
-  imports: [BreadcrumbComponent, TranslateModule],
+  imports: [BreadcrumbComponent, TranslateModule,CommonModule],
 })
 export class PageHeaderComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly menu = inject(MenuService);
+  private readonly settings = inject(SettingsService);
 
-  @HostBinding('class') class = 'matero-page-header';
+  @HostBinding('class') get hostClasses(): string {
+    return this.getShowPageHeader() ? "matero-page-header" : ""
+  }
 
   @Input() title = '';
   @Input() subtitle = '';
@@ -46,5 +49,8 @@ export class PageHeaderComponent implements OnInit {
     const routes = this.router.url.slice(1).split('/');
     this.nav = this.menu.getLevel(routes);
     this.nav.unshift('home');
+  };
+  getShowPageHeader(): boolean {
+    return this.settings.getShowPageHeader();
   }
 }

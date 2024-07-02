@@ -23,7 +23,7 @@ import { TranslateModule } from '@ngx-translate/core';
         </button>
         <button
           mat-icon-button
-          routerLink="/profile/settings"
+          routerLink="/profile/setting"
           matTooltip="{{ 'edit_profile' | translate }}"
         >
           <mat-icon>edit</mat-icon>

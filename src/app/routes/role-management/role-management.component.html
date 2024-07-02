@@ -2,34 +2,20 @@
 <div class="row">
     <div class="col-md-8">
         <mat-card>
-            <mat-card-header  style="margin: auto;padding: 2%;">
+            <mat-card-header style="margin: auto;padding: 2%;">
                 <mat-card-title>ROLES</mat-card-title>
             </mat-card-header>
             <mat-card-content>
                 <div style="padding: 7px;">
-                    <input class="form-control" type="text" name="search"
-                           [(ngModel)]="searchTerm" autocomplete="off" #input
-                           placeholder="Search Role">
+                    <input class="form-control" type="text" name="search" [(ngModel)]="searchTerm" autocomplete="off"
+                        #input placeholder="Search Role">
                 </div>
-                <mtx-grid
-                class="grid-height"
-                #grid [data]="allRoles" 
-                [columns]="columns" 
-                [loading]="isLoading" 
-                [rowHover]="rowHover"
-                [rowStriped]="rowStriped" 
-                [columnSortable]="columnSortable" 
-                [pageOnFront]="showPaginator"
-                [showPaginator]="showPaginator" 
-                [pageSizeOptions]="[5,10,50,100]" 
-                [pageIndex]="pageNo" 
-                [pageSize]="pageSize"
-                [showFirstLastButtons]="false"
-                (page)="onPaginateChange($event)">
+
+                <mtx-grid #grid [data]="allRoles" class="grid-height" [columns]="columns" [loading]="isLoading"
+                    [rowHover]="rowHover" [rowStriped]="rowStriped" [columnSortable]="columnSortable"
+                    [pageOnFront]="showPaginator" [showPaginator]="false" [pageSize]="rolePageSize">
                 </mtx-grid>
-                <div style="margin-right: 5px;text-align: end;" >
-                    <button mat-raised-button color="primary" class="round-button"  (click)="Fetch()">Fetch</button>
-                </div>
+
             </mat-card-content>
         </mat-card>
     </div>
@@ -51,8 +37,6 @@
                         <mat-error>This field is required</mat-error>
                         }
                     </mat-form-field>
-
-
                 </form>
 
                 <mat-form-field>
@@ -62,6 +46,7 @@
                         <mtx-option *ngFor="let feat of allFeatures" [value]="feat.id">{{ feat.name }}</mtx-option>
                     </mtx-select>
                 </mat-form-field>
+
 
 
                 <div class="m-t-8 d-flex justify-content-end">

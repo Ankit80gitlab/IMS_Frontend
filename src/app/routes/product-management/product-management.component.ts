@@ -4,8 +4,6 @@ import { PageHeaderComponent } from '@shared';
 import {
   MtxGrid,
   MtxGridColumn,
-  MtxGridColumnButton,
-  MtxGridDefaultOptions,
   MtxGridModule,
 } from '@ng-matero/extensions/grid';
 import { Sort } from '@angular/material/sort';
@@ -24,15 +22,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { ProductMangementService } from 'app/services/product-mangement.service';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
-import { debounceTime, distinctUntilChanged, filter, fromEvent, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, catchError, debounceTime, distinctUntilChanged, filter, fromEvent, of, switchMap, take, tap } from 'rxjs';
 import { DeleteDialogComponent } from 'app/dialog/delete-dialog/delete-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { Constant } from 'app/utility/constant';
+import { ProductIncidentTypeComponent } from '../product-incident-type/product-incident-type.component';
+import { DialogService } from 'app/utility/dialog.service';
+import { DialogRef } from '@angular/cdk/dialog';
 export interface ProductElement {
   productName: string;
   id: number;
   productType: string;
   productDescription: string;
+  incidentTypes: any;
   sNo: number;
 }
 @Component({
@@ -59,11 +62,12 @@ export class ProductManagementComponent {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastrService);
   productForm = this.fb.nonNullable.group({
-    sNo: [''],
     id: [''],
     productName: ['', [Validators.required]],
     productDescription: [''],
     productType: ['', [Validators.required]],
+    incidentTypeDtos: ['', [Validators.required]],
+
   });
   columns: MtxGridColumn[] = [
     {
@@ -89,35 +93,26 @@ export class ProductManagementComponent {
         {
           type: 'icon',
           icon: 'edit',
-          tooltip: 'Edit the customer',
+          tooltip: 'Edit the Product',
           click: record => this.editProduct(record),
         },
         {
           type: 'icon',
           color: 'warn',
           icon: 'delete',
-          tooltip: 'Delete the customer',
-          // pop: {
-          //   title: 'Confirm delete?',
-          //   closeText: 'No',
-          //   okText: 'Yes',
-          //   okColor:'warn',
-          //   closeColor:'primary'
-
-          // },
+          tooltip: 'Delete the Product',
           click: record => this.openDeleteConfirmation(record),
         },
       ],
     },
   ];
 
-  [x: string]: any;
   list: any[] = [];
   isLoading = false;
   columnSortable = true;
   rowHover = false;
   rowStriped = false;
-  showPaginator = true;
+  showPaginator = false;
   searchTerm: string = '';
   addStatus: boolean = true;
   searchItemStatus: boolean = false;
@@ -131,99 +126,117 @@ export class ProductManagementComponent {
   private prodmgntServ = inject(ProductMangementService);
   @ViewChild('grid')
   grid!: MtxGrid;
+  productSearchTermValue: string = '';
+  incidentTpeComponent!: MatDialogRef<ProductIncidentTypeComponent>;
 
-  constructor(private dialog: MatDialog) {}
+
+  constructor(private dialog: MatDialog, private dialogService: DialogService) { }
 
   ngOnInit(): void {
-    this.getData();
+    this.loadProducts();
+
   }
   ngAfterViewInit() {
+    this.addScrollEventListener();
     fromEvent(this.input.nativeElement, 'keyup')
       .pipe(
         filter(Boolean),
         debounceTime(500),
         distinctUntilChanged(),
         tap(text => {
-          this.searchProduct();
+          this.list = []
+          this.pageNo = 0;
+          this.loadProducts(this.searchTerm, 0);
         })
       )
       .subscribe();
   }
-  getData() {
-    this.loading = true;
-    this.prodmgntServ.getAllProduct(this.pageNo, this.pageSize).subscribe({
-      next: (resp: any) => {
-        let i = 0;
-        if (resp.data.length == 0) {
-          this.toast.success('No products Found');
-        }
-        resp.data.forEach((product: ProductElement) => {
-          product.sNo = this.pageSize * this.pageNo + i + 1;
-          this.list.push(product);
-          i++;
-        });
-        this.pageNo = this.pageNo + 1;
-        this.totalRecords = this.totalRecords + this.pageSize + 1;
-      },
-      error: (err: any) => {
-        console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-      },
-    });
-  }
+  ngOnDestroy(): void {
+    this.removeScrollEventListener();
+    this.dialogSubscription?.unsubscribe();
+  };
   addNew(formGroupDirective: FormGroupDirective) {
     this.editorTitle = 'ADD PRODUCT';
+    this.incidentTitle="Add Incident Type";
     this.addStatus = true;
     this.productForm.patchValue({
       productName: '',
       productType: '',
       productDescription: '',
+      incidentTypeDtos: ''
     });
     this.productForm.reset();
     formGroupDirective.resetForm();
   }
 
-  addProduct(formGroupDirective: FormGroupDirective) {
-    this.prodmgntServ.createProduct(this.productForm.value).subscribe({
-      next: resp => {
-        if (resp.status == 'error') {
-          this.toast.error(resp.message);
-        } else {
-          this.productForm.value.id = resp.data;
-          if (this.searchTerm == '' && this.list.length < this.pageSize) {
-            this.list.push(this.productForm.value);
-          } else if (
-            this.productForm.value.productName
-              ?.toLowerCase()
-              .includes(this.searchTerm.toLowerCase())
-          ) {
-            this.productForm.value.sNo = (this.list.length + 1).toString();
-            this.list.push(this.productForm.value);
-          }
-          this.grid.dataSource.data = this.list;
-          this.productForm.reset();
-          formGroupDirective.resetForm();
-          this.toast.success(resp.message);
-        }
-        this.loading = false;
-      },
-      error: err => {
-        console.log(err);
-        this.toast.error(err.message);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-        this.loading = false;
-      },
+  dialogSubscription!: Subscription;
+
+  addIncidentType() {
+    this.incidentTpeComponent = this.dialog.open(ProductIncidentTypeComponent, {
+      data: this.productForm.value.incidentTypeDtos, autoFocus: false, disableClose: true
     });
+    this.dialogSubscription = this.dialogService.dataObservable$.subscribe((result) => {
+      if (result) {
+        if (result.click === "save") {          
+          this.productForm.patchValue({
+            incidentTypeDtos:result.data.items
+          })
+          this.dialog.closeAll();
+        }
+      }
+    })
   }
 
+  addProduct(formGroupDirective: FormGroupDirective) {
+    if (this.productForm.invalid) {
+      this.toast.error('Name and Type cant be empty');
+    }
+    else {
+      
+      this.prodmgntServ.createProduct(this.productForm.value).subscribe({
+        next: resp => {
+          if (resp.status == 'error') {
+            this.toast.error(resp.message);
+          } else {
+            let newProduct = {
+              sNo: this.list.length + 1,
+              id: resp.data.id,
+              productName: this.productForm.value.productName,
+              productType: this.productForm.value.productType,
+              incidentTypes: this.productForm.value.incidentTypeDtos,
+              productDescription: this.productForm.value.productDescription
+            }
+            this.list.push(newProduct);
+            this.grid.dataSource.data = this.list;
+            this.productForm.reset();
+            formGroupDirective.resetForm();
+            this.toast.success(resp.message);
+          }
+          this.loading = false;
+        },
+        error: err => {
+          this.toast.error(err.message);
+          this.loading = false;
+        },
+      });
+    }
+  }
+
+  currentProduct: any;
+  incidentTitle="Add Incident Type";
+
   editProduct(data: any) {
+    
+    this.currentProduct = data;
     this.editorTitle = 'EDIT PRODUCT';
+    this.incidentTitle="Edit Incident Type";
     this.addStatus = false;
     this.productForm.patchValue({
       id: data.id,
       productName: data.productName,
       productType: data.productType,
       productDescription: data.productDescription,
+      incidentTypeDtos: data.incidentTypes
     });
   }
 
@@ -233,126 +246,65 @@ export class ProductManagementComponent {
     } else {
       this.prodmgntServ.updateProduct(this.productForm.value).subscribe({
         next: resp => {
-          if (resp.status == 'error') {
+          if (resp.status == Constant.ERROR) {
             this.toast.error(resp.message);
           } else {
-            this.list.forEach(item => {
-              if (item.id == this.productForm.value.id) {
-                item.productName = this.productForm.value.productName;
-                item.productType = this.productForm.value.productType;
-                item.productDescription = this.productForm.value.productDescription;
-                item.id = this.productForm.value.id;
-              }
-            });
+            let index = this.list.findIndex(product => product.id === this.currentProduct.id);
+            let updProduct = this.list[index];
+            updProduct.sNo = this.currentProduct.sNo;
+            updProduct.id = this.currentProduct.id,
+            updProduct.productName = this.productForm.value.productName;
+            updProduct.productType = this.productForm.value.productType;
+            updProduct.incidentTypes = this.productForm.value.incidentTypeDtos;
+            updProduct.productDescription = this.productForm.value.productDescription;
+            this.list[index] = updProduct;
             this.grid.dataSource.data = this.list;
             this.toast.success(resp.message);
+
+            this.productForm.reset();
+            formGroupDirective.resetForm();
+            this.addNew(formGroupDirective);
+            this.loading = false;
           }
-          this.productForm.reset();
-          formGroupDirective.resetForm();
-          this.addNew(this.formGroupDirective);
-          this.loading = false;
-        },
-        error: err => {
+        }, error: err => {
           console.log(err);
-          alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER ' + err);
           this.loading = false;
         },
-      });
+      })
     }
   }
 
-  onPaginateChange(event: any) {
-    console.log('paginate', event);
-    if (event.pageSize != this.pageSize) {
-      this.list = [];
-      this.pageNo = 0;
-      this.pageSize = event.pageSize;
-      if (this.searchTerm != '') {
-        this.searchApi();
-      } else {
-        this.getData();
-      }
-    } else if (event.pageIndex >= this.pageNo) {
-      this.getData();
-    }
-  }
-  searchProduct() {
-    if (this.searchTerm == '') {
-      this.searchItemStatus = false;
-      this.grid.dataSource.data = [];
-      this.list = [];
-      this.pageNo = 0;
-      this.getData();
-    } else {
-      this.searchItemStatus = true;
-      this.pageNo = 0;
-      this.searchApi();
-    }
-  }
 
-  searchApi() {
-    if(this.pageNo == 0){
-      this.grid.dataSource.data = [];
-      this.list = []; 
-    }
-    this.prodmgntServ.searchProduct(this.searchTerm, this.pageNo, this.pageSize).subscribe({
-      next: resp => {
-        let i = 0;
-        console.log(resp.data);
-        if(resp.data.length>0){
-        resp.data.forEach((product: ProductElement) => {
-          product.sNo = this.pageSize * this.pageNo + i + 1;
-          this.list.push(product);
-          i++;
-        });
-        this.grid.dataSource.data = this.list;
-      }
-      else{
-        this.toast.success(resp.message)
-      }
-      },
-      error: err => {
-        console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-      },
-    });
-  }
 
   Fetch() {
-    if (this.searchTerm == '') {
-      this.getData();
-    } else {
-      this.pageNo = this.pageNo + 1;
-      this.searchApi();
-    }
+    this.loading = true;
+    this.loadProducts(this.searchTerm, ++this.pageNo);
   }
   deleteProductApi(record: any) {
     let id = record.id;
-    this.loading = true;
-    this.grid.dataSource.data = this.list;
+    // this.loading = true;
     this.prodmgntServ.deleteProduct(id).subscribe({
       next: resp => {
-        if (resp.status == 'success') {
+        if (resp.status == Constant.SUCCESS) {
           this.list.forEach((item, index) => {
-            if (item.id === id) {
-              this.list.splice(index, 1); // Remove 1 element at the current index
+            if (item.id == id) {
+              this.list.splice(index, 1);
             }
           });
+          this.grid.dataSource.data = this.list;
           this.toast.success(resp.message);
         } else {
           this.toast.error(resp.message);
         }
       },
       error: err => {
-        console.log(err);
         this.toast.show(err.message);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
         this.loading = false;
       },
     });
-  } 
-  openDeleteConfirmation(record:any) {
-    let name= record.productName;
+  }
+  openDeleteConfirmation(record: any) {
+    let name = record.productName;
     const dialogRef = this.dialog.open(DeleteDialogComponent, {
       width: '300px',
       data: { name },
@@ -360,9 +312,51 @@ export class ProductManagementComponent {
 
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result) {
-        // Call your delete logic here, e.g., this.deleteItem(id);
         this.deleteProductApi(record);
       }
     });
   }
+
+
+  loadProducts(term: string = '', pageNo: number = 0) {
+    this.prodmgntServ.getAllProduct(term, pageNo, this.pageSize).subscribe({
+      next: response => {
+        if (response.status == Constant.SUCCESS) {
+          let i = 0;
+          response.data.forEach((product: ProductElement) => {
+            product.sNo = this.pageSize * pageNo + i + 1;
+            this.list.push(product);
+            i++;
+          });
+          this.grid.dataSource.data = this.list;
+          this.totalRecords = this.totalRecords + this.pageSize + 1;
+        }
+      },
+      error: err => {
+        console.log(err);
+      },
+    });
+  }
+  addScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.addEventListener('scroll', this.onTableScroll.bind(this));
+    }
+  }
+
+  removeScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.removeEventListener('scroll', this.onTableScroll.bind(this));
+    }
+  }
+
+  onTableScroll(event: Event): void {
+    const element = (event.target as HTMLElement);
+    const atBottom = element.scrollHeight - element.scrollTop - 5 <= element.clientHeight;
+    if (atBottom) {
+      this.Fetch();
+    }
+  }
+  changeSort($event: Sort) { }
+
+
 }

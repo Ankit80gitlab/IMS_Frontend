@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Add Details</h2>
+<mat-divider></mat-divider>
+<div style="margin-top: 5px;">
+  <button mat-raised-button class="menuTrigger" (click)="addItem()">
+    New <mat-icon style="color: #26a331;">add_circle</mat-icon>
+  </button>
+</div>
+<mat-dialog-content>
+  <div [formGroup]="incidentTypeForm" #formGroupDirective="ngForm" class="form-field-full">
+    <div formArrayName="items" *ngFor="let item of incidentTypeForm.get('items')?.controls; let i = index;">
+
+      <div [formGroupName]="i">
+        <div class="row">
+
+          <div class="col-md-5">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Incident Type</mat-label>
+              <input matInput placeholder="Type" formControlName="type" required>
+              <!-- @if (incidentTypeForm.get('productName')?.invalid) {
+          <mat-error>This field is required</mat-error>
+          } -->
+            </mat-form-field>
+          </div>
+          <div class="col-md-5">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Description</mat-label>
+              <input matInput placeholder="Description" formControlName="description">
+              <!-- @if (productForm.get('productName')?.invalid) {
+          <mat-error>This field is required</mat-error>
+          } -->
+            </mat-form-field>
+          </div>
+
+          <div class="col-md-2">
+            <mat-icon (click)="removeGroup(i)">delete</mat-icon>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="container-fluid">
+      <div class="row">
+        <button class="col-sm-4" mat-raised-button color="custom-green" (click)="onCloseClick(formGroupDirective)">
+          Close
+        </button>
+        <!-- <button class="col-sm-4" mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button> -->
+        <button [disabled]="!incidentTypeForm.valid" class="col-sm-4" mat-raised-button color="primary"
+          [mat-dialog-close]="incidentTypeForm.value" (click)="onSaveClick()">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>

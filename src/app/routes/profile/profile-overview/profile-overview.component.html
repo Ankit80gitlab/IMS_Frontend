@@ -1,0 +1,94 @@
+<div class="row">
+    <div class="col-md-4">
+        <mat-card class="mat-mdc-card mdc-card mat-mdc-card-outlined mdc-card--outlined">
+            <mat-card-content class="mat-mdc-card-content">
+                <div class="text-center">
+                    <img alt="" width="80" class="m-b-8 r-full" src="./assets/ims.png">
+                    <h2 class="m-t-0 m-b-8 f-w-400">{{name}}</h2>
+
+                    <p class="m-t-0 text-grey-500">{{email}}</p>
+
+                </div>
+
+                <mat-nav-list class="mat-mdc-nav-list mat-mdc-list-base mdc-list m-x--16 m-b--16 m-t-16">
+
+                    <mat-divider class="mat-divider mat-divider-horizontal">
+                    </mat-divider>
+                    <a routerlink="/profile/setting"
+                        class="mat-mdc-list-item mdc-list-item mat-mdc-list-item-interactive mdc-list-item--with-leading-icon mat-mdc-list-item-single-line mdc-list-item--with-one-line"
+                        href="/profile/setting">
+                        <mat-icon
+                            class="mat-icon notranslate mat-mdc-list-item-icon material-icons mat-ligature-font mat-icon-no-color mdc-list-item__start">
+                            settings
+                        </mat-icon>
+                        <span class="mdc-list-item__content">
+                            <span class="mat-mdc-list-item-unscoped-content mdc-list-item__primary-text">
+                                Settings
+                            </span>
+                        </span>
+                    </a>
+                </mat-nav-list>
+
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <div class="col-md-8">
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>Personal Info</mat-card-title>
+            </mat-card-header>
+            <br>
+
+            <mat-card-content>
+
+                <mat-grid-list cols="2" rowHeight="40px">
+                    <mat-grid-tile class="grid-tile">USER ID</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{id}}</mat-grid-tile>
+
+                    <mat-grid-tile class="grid-tile">NAME</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{name}}</mat-grid-tile>
+
+                    <mat-grid-tile class="grid-tile">USERNAME</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{username}}</mat-grid-tile>
+
+                    <mat-grid-tile class="grid-tile">EMAIL ID</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{email}}</mat-grid-tile>
+
+                </mat-grid-list>
+            </mat-card-content>
+
+            <mat-card-header>
+                <mat-card-title>Overview</mat-card-title>
+            </mat-card-header>
+            <br>
+
+            <mat-card-content>
+                <mat-grid-list cols="2" rowHeight="40px">
+
+                    <mat-grid-tile class="grid-tile">ROLE NAME</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{roles}}</mat-grid-tile>
+
+                    <mat-grid-tile class="grid-tile">CUSTOMER NAME</mat-grid-tile>
+                    <mat-grid-tile class="grid-tile">{{customerName}}</mat-grid-tile>
+
+                </mat-grid-list>
+            </mat-card-content>
+
+            <mat-card-header>
+                <mat-card-title>Permissions</mat-card-title>
+            </mat-card-header>
+            <br>
+
+            <mat-card-content>
+                <mat-grid-list cols="2" rowHeight="40px">
+                    <mat-grid-tile *ngFor="let permission of permissions" class="grid-tile">
+                        {{permission | uppercase}}
+                    </mat-grid-tile>
+                </mat-grid-list>
+            </mat-card-content>
+
+        </mat-card>
+    </div>
+
+</div>

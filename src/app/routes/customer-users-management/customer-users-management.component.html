@@ -1,0 +1,107 @@
+<h2 mat-dialog-title>Add Details</h2>
+<mat-divider></mat-divider>
+<mat-dialog-content #dialogContent>
+
+  <form [formGroup]="customerUserForm" #formGroupDirective="ngForm" class="form-field-full">
+
+    <div class="row">
+
+      <div class="col-md-4">
+        <mat-form-field class="m-r-8" appearance="outline">
+          <mat-label>Product</mat-label>
+          <mtx-select [items]="product$ | async" bindLabel="productName" bindValue="id" [virtualScroll]="true"
+            (scrollToEnd)="onScrollProductEnd()" (search)="onProductSearch($event)" [loading]="productLoading"
+            [searchable]="true" formControlName="id" (change)="onProductSelectionChange($event)">
+          </mtx-select>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-4">
+        <mat-form-field>
+          <mat-label>Select Users</mat-label>
+          <mtx-select [(value)]="fetchedUsers" [items]="itemsList" bindLabel="userName" bindValue="id" [multiple]="true"
+            [searchable]="true" formControlName="userIds" (change)="onUserSelectionChange($event)">
+          </mtx-select>
+        </mat-form-field>
+      </div>
+
+
+      <div class="col-md-4">
+        <button mat-raised-button color="primary" (click)="addItem()" [disabled]="disableEscalation">
+          <mat-icon>add_circle</mat-icon>
+          Add Escalation
+        </button>
+      </div>
+    </div>
+
+
+    <div formArrayName="incidentTypeDtos"
+      *ngFor="let item of customerUserForm.get('incidentTypeDtos')?.controls; let i = index;">
+      <div [formGroupName]="i">
+        <hr>
+        <div class="row">
+
+          <div class="col-md-4">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Select Incident Type</mat-label>
+              <mtx-select [(value)]="fetchedIncident" [items]="incident$ | async" bindLabel="type" bindValue="id"
+                [virtualScroll]="true" (scrollToEnd)="onIncidentScrollEnd()" (search)="onIncidentSearch($event)"
+                [loading]="incidentLoading" [searchable]="true" formControlName="id"
+                (change)="onIncidentSelectionChange($event)">
+              </mtx-select>
+            </mat-form-field>
+          </div>
+
+          <div class="col-md-6">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Default User</mat-label>
+              <mtx-select [(value)]="fetchedDefaultUsers" [items]="deafultUserList" bindLabel="userName" bindValue="id"
+                [multiple]="true" [searchable]="true" formControlName="defaultUserIds">
+              </mtx-select>
+            </mat-form-field>
+          </div>
+
+          <div style="cursor: pointer;" class="col-md-2">
+            <mat-icon matTooltip="Remove escalation" (click)="removeGroup(i)">delete</mat-icon>
+          </div>
+
+        </div>
+
+        <div class="row">
+          <div class="col-md-4">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Escalation Hours</mat-label>
+              <input matInput placeholder="Escalation Hour" formControlName="escalationHour">
+            </mat-form-field>
+          </div>
+
+          <div class="col-md-6">
+            <mat-form-field class="m-r-8" appearance="outline">
+              <mat-label>Escalated To</mat-label>
+              <mtx-select [(value)]="fetchedEscalatedUser" [items]="escalatedToList" bindLabel="userName" bindValue="id"
+                [multiple]="true" [searchable]="true" formControlName="incidentEscalationUserIds">
+              </mtx-select>
+            </mat-form-field>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <br>
+
+  </form>
+
+  <div class="container-fluid">
+    <div class="row">
+      <button class="col-sm-4" mat-raised-button color="custom-green" (click)="onCloseClick(formGroupDirective)">
+        Close
+      </button>
+
+      <button class="col-sm-4" [disabled]="!customerUserForm.valid || !areSingleIncidentsSelected" mat-raised-button color="primary"
+        (click)="onSaveClick()" [mat-dialog-close]="customerUserForm.value">
+        Save
+      </button>
+    </div>
+  </div>
+
+</mat-dialog-content>

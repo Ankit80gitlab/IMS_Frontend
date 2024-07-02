@@ -41,4 +41,7 @@
   height: 30px;
   width: 30px;
 }
-
+.map-draw-icon-container {
+    position: absolute;
+    z-index:1;
+}

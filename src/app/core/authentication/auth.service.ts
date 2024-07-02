@@ -76,6 +76,8 @@ export class AuthService {
       return of(this.user$.getValue());
     }
 
-    return this.loginService.me().pipe(tap(user => this.user$.next(user)));
+    return this.loginService.me().pipe(tap(user => {
+      this.user$.next(user)
+    }));
   }
 }

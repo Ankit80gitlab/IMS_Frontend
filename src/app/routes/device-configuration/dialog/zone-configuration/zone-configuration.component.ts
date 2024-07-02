@@ -4,13 +4,13 @@ import {
     MatDialogActions,
     MatDialogClose,
     MatDialogContent,
-    MatDialogRef
+    MatDialogRef, MatDialogTitle
 } from "@angular/material/dialog";
 import {MatDivider} from "@angular/material/divider";
-import {MatFormField, MatFormFieldModule, MatLabel} from "@angular/material/form-field";
+import {MatError, MatFormField, MatFormFieldModule, MatLabel} from "@angular/material/form-field";
 import {MatInput} from "@angular/material/input";
 import {MtxSelect} from "@ng-matero/extensions/select";
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
+import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import {MatButtonModule} from "@angular/material/button";
 import {MtxDialogData} from "@ng-matero/extensions/dialog";
 import {CustomerManagementService} from "../../../../services/customer-management.service";
@@ -21,7 +21,6 @@ import {
     BehaviorSubject,
     catchError,
     debounceTime,
-    delay,
     Observable,
     of,
     Subject,
@@ -29,17 +28,20 @@ import {
     take,
     tap
 } from "rxjs";
+import {DialogService} from "../../../../utility/dialog.service";
 
 @Component({
     selector: 'app-zone-configuration',
     standalone: true,
     imports: [
         MatDialogContent,
+        MatDialogTitle,
         MatDivider,
         MatFormField,
         MatInput,
         MatLabel,
         MtxSelect,
+        MatError,
         ReactiveFormsModule,
         FormsModule,
         MatFormFieldModule,
@@ -56,6 +58,7 @@ export class ZoneConfigurationComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly customerManagementService = inject(CustomerManagementService);
     private readonly toast = inject(ToastrService);
+
     zoneForm!: FormGroup;
     saveBtnText: string = "Save";
     private customerSubject: BehaviorSubject<Object[]> = new BehaviorSubject<Object[]>([]);
@@ -68,7 +71,8 @@ export class ZoneConfigurationComponent implements OnInit {
     selectedCustomerName!: string | undefined;
 
     constructor(public dialogRef: MatDialogRef<ZoneConfigurationComponent>,
-                @Inject(MAT_DIALOG_DATA) private data: MtxDialogData) {
+                @Inject(MAT_DIALOG_DATA) private data: MtxDialogData,
+                private dialogService: DialogService) {
         this.zoneForm = this.fb.nonNullable.group({
             id: [null],
             name: [null, [Validators.required]],
@@ -76,13 +80,13 @@ export class ZoneConfigurationComponent implements OnInit {
         });
         if (data != null) {
             this.saveBtnText = "Update";
-            this.zoneForm.patchValue(data);
             this.selectedCustomerId = (this.data as any).customerId;
             this.selectedCustomerName = (this.data as any).customerName;
             this.customerSubject.next([
                 {id: this.selectedCustomerId, name: this.selectedCustomerName}
             ]);
         }
+        this.zoneForm.patchValue(this.data);
     };
 
     ngOnInit(): void {
@@ -107,7 +111,7 @@ export class ZoneConfigurationComponent implements OnInit {
     }
 
     loadCustomers(term: string = "", pageNo: number = 0): Observable<Object[]> {
-        return this.customerManagementService.getAllCustomersBasicDetails(term, pageNo, 10).pipe(
+        return this.customerManagementService.getAllCustomersBasicDetails(term, pageNo, Constant.DEFAULT_PAGE_SIZE).pipe(
             switchMap((response: any) => {
                 let items: any = [];
                 if (response.status == Constant.SUCCESS) {
@@ -132,7 +136,10 @@ export class ZoneConfigurationComponent implements OnInit {
         );
     };
 
-    onCloseClick(): void {
+    onCloseClick(formGroupDirective: FormGroupDirective): void {
+        this.zoneForm.reset();
+        formGroupDirective.reset();
+        this.dialogService.submit(undefined);
         this.dialogRef.close();
     };
 
@@ -140,14 +147,12 @@ export class ZoneConfigurationComponent implements OnInit {
         if (this.zoneForm.valid) {
             const data = this.zoneForm.value;
             data.customerName = this.selectedCustomerName;
-            this.dialogRef.close({click: "save", data: data});
+            this.dialogService.submit({click: "save", data: data});
         }
     };
 
     onDeleteClick(): void {
-        if (this.zoneForm.valid) {
-            this.dialogRef.close({click: "delete", data: this.zoneForm.value});
-        }
+        this.dialogService.submit({click: "delete", data: this.zoneForm.value});
     };
 
     onScrollEnd(): void {
@@ -167,6 +172,8 @@ export class ZoneConfigurationComponent implements OnInit {
     };
 
     onSelectionChange(event: any): void {
-        this.selectedCustomerName = event.name;
+        if (event) {
+            this.selectedCustomerName = event.name;
+        }
     }
 }

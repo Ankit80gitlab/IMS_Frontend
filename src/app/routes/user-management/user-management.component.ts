@@ -15,23 +15,19 @@ import { MtxSelect } from '@ng-matero/extensions/select';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { RoleManagementService } from 'app/services/role-management.service';
-import { Role } from 'app/model-class/role';
-import { Feature } from 'app/model-class/features';
 import { UserManagementService } from 'app/services/user-management.service';
 import { User } from 'app/model-class/user';
-import { ToastrService } from 'ngx-toastr';
+import { Toast, ToastrService } from 'ngx-toastr';
 import { CustomerManagementService } from 'app/services/customer-management.service';
 import { fromEvent, filter, debounceTime, distinctUntilChanged, tap } from 'rxjs';
 import { AsyncPipe, NgIf } from "@angular/common";
-import {
-  BehaviorSubject,
-  catchError,
-  Observable,
-  of,
-  Subject,
-  switchMap,
-  take
-} from "rxjs";
+import { BehaviorSubject, catchError, Observable, of, Subject, switchMap, take } from "rxjs";
+import { MatTableModule } from '@angular/material/table';
+import { Constant } from 'app/utility/constant';
+import { MatDialog } from '@angular/material/dialog';
+import { DeleteDialogComponent } from 'app/dialog/delete-dialog/delete-dialog.component';
+import { Subscription } from 'rxjs';
+import { AuthService } from '@core';
 
 export interface UserInterface {
   sNo: number;
@@ -42,6 +38,7 @@ export interface UserInterface {
   password: any;
   roleId: any;
   customerId: any;
+  roleName: any
   productIds: any;
 }
 
@@ -66,92 +63,58 @@ export interface UserInterface {
     MatHint,
     MatError,
     NgIf,
-    AsyncPipe],
+    AsyncPipe,
+    MatTableModule],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.css'
 })
 export class MyComponent implements OnInit {
 
+  @ViewChild('input') input!: ElementRef;
+  @ViewChild('grid') grid!: MtxGrid;
+
   private readonly toast = inject(ToastrService);
-  private readonly customerServ = inject(CustomerManagementService);
+  private userMgntServ = inject(UserManagementService);
+  private roleMgntServ = inject(RoleManagementService);
+  private customerServ = inject(CustomerManagementService);
+  private readonly fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+
+  userForm: FormGroup;
+  customerForm!: FormGroup;
+
   private customerSubject: BehaviorSubject<Object[]> = new BehaviorSubject<Object[]>([]);
   private customerSearchTerms = new Subject<string>();
   customer$: Observable<Object[]> = this.customerSubject.asObservable();
-  loading: boolean = false;
+  customerSearchTermValue: string = '';
 
-  customerSearchTermValue: string = "";
-  customerPageNo: number = 0;
-  customerForm!: FormGroup;
-
-  constructor(
-    private userMgntServ: UserManagementService,
-    private roleMgntServ: RoleManagementService,
-    private renderer: Renderer2,
-    private fb: FormBuilder) {
-
-    this.customerForm = this.fb.nonNullable.group({
-      customerId: [null],
-      name: [null],
-    });
-  }
-
-  @ViewChild('grid') grid!: MtxGrid;
-  @ViewChild('input') input!: ElementRef;
-  @HostListener("window:scroll", ["$event"])
-  @ViewChild('scrollableElement')
-  private scrollableElement!: ElementRef;
-
-  onScroll(event: any) {
-    let tracker = event.target;
-    let limit = tracker.scrollHeight - tracker.clientHeight;
-    if (event.target.scrollTop === limit) {
-      console.log('end reached');
-      //this.Fetch();
-      //this.scrollToTop();
-    }
-  }
-
-  scrollToTop(): void {
-    this.renderer.setProperty(this.scrollableElement.nativeElement, 'scrollTop', 0);
-  }
-
-  currentUser: any;
-
-  selectedRole: any;
-  selectedCustomerId: any;
   allUsers: any[] = [];
-  allRoles: Array<Role> = [];
-  allFeatures: Array<Feature> = [];
-  allCustomers: any[] = [];
+  allRoles: any[] = [];
   allCustomerProduct: any[] = [];
-
-  isRoleFieldValid: boolean = false;
-  isRoleFieldValidForUpdate: boolean = true;
-  arePasswordfieldsRequired: boolean = true;
-  foundCustomerProduct: boolean = false;
-  searchItemStatus: boolean = false;
-  userForm: any;
-  selectedProductIds: any[] = [];
+  userLoading: boolean = false;
+  isLoading: boolean = false;
+  customerLoading: boolean = false;
+  customerPageNo: number = 0;
+  userPageNo: number = 0;
+  userPageSize: number = 50;
+  totalRecords: number = 0;
   searchTerm: string = '';
 
-  pageNo: number = 0;
-  pageSize: number = 10;
-  totalRecords: number = 0;
 
+  userSubscription!: Subscription;
+  loggedUser: any;
 
-  isLoading = false;
   columnSortable = true;
   rowHover = true;
   rowStriped = true;
-  showPaginator = true;
-  editorTitle: string = "ADD USER";
-  buttonText: string = "Save";
+  showPaginator = false;
+  editorTitle: string = 'Add User';
+  buttonText: string = 'Save';
 
   columns: MtxGridColumn[] = [
     {
-      header: 'Id',
-      field: 'id',
-      sortable: true,
+      header: 'S.No',
+      field: 'sNo',
       minWidth: 100,
       width: '100px',
     },
@@ -160,178 +123,49 @@ export class MyComponent implements OnInit {
       field: 'name',
       sortable: true,
       minWidth: 100,
-      width: '100',
+      width: '100px',
     },
     {
       header: 'User Name',
-      field: 'username',
+      field: 'userName',
       sortable: true,
       minWidth: 100,
-      width: '160px',
+      width: '100px',
     },
     {
       field: 'operation',
-      minWidth: 100,
+      minWidth: 140,
       width: '140px',
       pinned: 'right',
       type: 'button',
       buttons: [
-        {
-          type: 'icon',
-          icon: 'edit',
-          tooltip: "Edit Role",
-          click: user => this.editExistingUser(user),
-        },
-        {
-          type: 'icon',
-          color: 'warn',
-          icon: 'delete',
-          tooltip: "Delete Role",
-          pop: {
-            title: "Confirm delete?",
-            closeText: "No",
-            okText: "Yes",
-          },
-          click: user => this.removeExistingUser(user),
-        },
+        { type: 'icon', icon: 'edit', tooltip: "Edit User", click: user => this.editExistingUser(user), },
+        { type: 'icon', color: 'warn', icon: 'delete', tooltip: "Delete User", click: user => this.openDeleteConfirmation(user), },
       ],
     },
   ];
 
-
-  ngOnInit() {
-    this.getAllUser();
-    this.getAllRoles();
-    this.customerInfiniteLoading();
-
+  constructor(private dialog: MatDialog) {
     this.userForm = this.fb.group({
+      id: new FormControl(''),
       name: new FormControl('', Validators.required),
-      username: new FormControl('', Validators.required),
+      userName: new FormControl('', Validators.required),
       email: new FormControl('', Validators.required),
+      customerName: new FormControl(null, Validators.required),
+      roleName: new FormControl(null, Validators.required),
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', Validators.required]
+      confirmPassword: ['', Validators.required],
+      userTypeId:('')
     }, { validator: this.passwordMatchValidator });
-
   }
 
-  ngAfterViewInit() {
-    fromEvent(this.input.nativeElement, 'keyup')
-      .pipe(
-        filter(Boolean),
-        debounceTime(500),
-        distinctUntilChanged(),
-        tap(text => {
-          this.searchUser();
-        })
-      )
-      .subscribe();
-  }
-
-  getAllUser() {
-    this.userMgntServ.getAllUser(this.pageNo, this.pageSize).subscribe({
-      next: (resp: any) => {
-        let i = 0;
-        if (resp.message.length == 0) {
-          this.toast.success('No users Found');
-        }
-        resp.message.forEach((user: UserInterface) => {
-          user.sNo = this.pageSize * this.pageNo + i + 1;
-          this.allUsers.push(user)
-          i++;
-        });
-        this.pageNo = this.pageNo + 1;
-        this.totalRecords = this.totalRecords + this.pageSize + 1;
-      }, error(err) {
-        console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-      },
-    })
-  }
-
-  getAllRoles() {
-    this.roleMgntServ.getAllRoleBasicDetails().subscribe({
-      next: (resp: any) => {
-        resp.data.forEach((role: any) => {
-          this.allRoles.push(role)
-        });
-      }, error(err) {
-        console.log(err);
-      },
-    })
-  }
-
-  customerInfiniteLoading() {
-    this.loadCustomers().pipe(
-      take(1),
-    ).subscribe(initialItems => {
-      this.customerSubject.next(initialItems);
-    });
-    this.customerSearchTerms.pipe(
-      debounceTime(300),
-      tap(() => this.loading = true),
-      switchMap(term => {
-        this.customerSearchTermValue = term;
-        return this.loadCustomers(term);
-      })
-    ).subscribe(products => {
-      this.customerSubject.next(products);
-      this.loading = false;
-    });
-  }
-
-  loadCustomers(term: string = "", pageNo: number = 0): Observable<Object[]> {
-    return this.customerServ.getAllCustomersBasicDetails(term, pageNo, 10).pipe(
-      switchMap((response: any) => {
-        let items = [];
-        if (response.status == "success") {
-          items = response.data;
-        } else {
-          if (response.message instanceof Object) {
-            this.toast.error(response.message.text)
-          } else {
-            this.toast.error(response.message);
-          }
-          console.log(response);
-        }
-        return of(items);
-      }),
-      catchError((error: any) => {
-        console.log(error);
-        this.toast.error("SOMETHING_WENT_WRONG");
-        return of([]);
-      })
-    );
-  }
-
-  onScrollEnd(): void {
-    const currentItems = this.customerSubject.getValue();
-    this.loading = true;
-    this.loadCustomers(this.customerSearchTermValue, ++this.customerPageNo).pipe(take(1)).subscribe(newItems => {
-      const updatedItems = currentItems.concat(newItems);
-      this.customerSubject.next(updatedItems);
-      this.loading = false;
-    });
-  }
-
-  onSearch(event: { term: string }): void {
-    this.customerPageNo = 0;
-    this.customerSearchTerms.next(event.term);
-  }
-
-  searchUser() {
-    if (this.searchTerm == '') {
-      this.searchItemStatus = false;
-      this.grid.dataSource.data = [];
-      this.allUsers = [];
-      this.pageNo = 0;
-      this.getAllUser();
-    } else {
-      this.searchItemStatus = true;
-      this.pageNo = 0;
-      this.searchApi();
+  removeCustomerValidators() {
+    const control = this.userForm.get('customerName');
+    if (control) {
+      control.clearValidators();
+      control.updateValueAndValidity();
     }
   }
-
   passwordMatchValidator(form: FormGroup) {
     const passwordControl = form.get('password');
     const confirmPasswordControl = form.get('confirmPassword');
@@ -346,130 +180,188 @@ export class MyComponent implements OnInit {
     }
   }
 
+  ngOnInit(): void {
 
-  searchApi() {
-    if (this.pageNo == 0) {
-      this.grid.dataSource.data = [];
-      this.allUsers = [];
+    this.getAllTypeForUser();
+
+    this.userSubscription = this.authService.user().subscribe(user => (this.loggedUser = user));
+    if (this.loggedUser.roles[0] === "ROLE_ADMIN") {
+      this.removeCustomerValidators();
     }
-    this.userMgntServ.searchUser(this.searchTerm, this.pageNo, this.pageSize).subscribe({
-      next: resp => {
-        let i = 0;
-        // console.log(resp.data);
-        if (resp.data.length > 0) {
-          resp.data.forEach((user: UserInterface) => {
-            user.sNo = this.pageSize * this.pageNo + i + 1;
+    this.getAllRoles();
+    this.loadUsers();
+
+    this.loadCustomers().pipe(
+      take(1),
+    ).subscribe(initialItems => {
+      this.customerSubject.next(initialItems);
+    });
+    this.customerSearchTerms.pipe(
+      debounceTime(300),
+      tap(() => this.customerLoading = true),
+      switchMap(term => {
+        this.customerSearchTermValue = term;
+        return this.loadCustomers(term);
+      })
+    ).subscribe(obj => {
+      this.customerSubject.next(obj);
+      this.customerLoading = false;
+    });
+  }
+
+  ngAfterViewInit() {
+    this.addScrollEventListener();
+    fromEvent(this.input.nativeElement, 'keyup')
+      .pipe(
+        filter(Boolean),
+        debounceTime(500),
+        distinctUntilChanged(),
+        tap(text => {
+          this.allUsers = [];
+          this.userPageNo = 0;
+          this.loadUsers(this.searchTerm, 0);
+        })
+      )
+      .subscribe();
+  };
+
+  ngOnDestroy(): void {
+    this.userSubscription?.unsubscribe();
+    this.removeScrollEventListener();
+  };
+
+  allTypeForUser:any[]=[];
+
+  getAllTypeForUser(){
+    this.userMgntServ.getAllTypesForUser('',0,10).subscribe({
+      next : (response) => {
+        if(response.status==Constant.SUCCESS){
+          this.allTypeForUser=response.data;
+        }
+      },
+      error(err) {
+        console.log(err);
+      },
+    })
+  }
+
+  loadUsers(term: string = '', pageNo: number = 0) {
+    this.addNew();
+    this.userMgntServ.getAllUser(term, pageNo, this.userPageSize).subscribe({
+      next: response => {
+        if (response.status == Constant.SUCCESS) {
+          let i = 0;
+          response.data.forEach((user: UserInterface) => {
+            user.sNo = this.userPageSize * pageNo + i + 1;
             this.allUsers.push(user);
             i++;
           });
           this.grid.dataSource.data = this.allUsers;
-        }
-        else {
-          this.toast.success(resp.message)
+          this.totalRecords = this.totalRecords + this.userPageSize + 1;
         }
       },
       error: err => {
         console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
       },
     });
   }
 
-
-  Fetch() {
-    if (this.searchTerm == '') {
-      this.getAllUser();
-    } else {
-      this.pageNo = this.pageNo + 1;
-      this.searchApi();
-    }
-  }
-
-  onPaginateChange(event: any) {
-    // console.log('paginate', event);
-    if (event.pageSize != this.pageSize) {
-      this.allUsers = [];
-      this.pageNo = 0;
-      this.pageSize = event.pageSize;
-      if (this.searchTerm != '') {
-        this.searchApi();
-      } else {
-        this.getAllUser();
-      }
-    } else if (event.pageIndex >= this.pageNo) {
-      this.getAllUser();
-    }
-  }
-
-  onRoleSelectionChange($event: Event) {
-    if (this.selectedRole === "") {
-      this.isRoleFieldValid = false;
-    } else {
-      this.isRoleFieldValid = true;
-    }
-  }
-
-  onSubmit(formGroupDirective: FormGroupDirective) {
-    if (this.buttonText === "Save") {
-      this.createNewUser(formGroupDirective);
-    } else if (this.buttonText === "Update") {
-      this.updateExistingUser(formGroupDirective);
-    }
-  }
-
-  onCustomerSelectionChange() {
-    this.allCustomerProduct.length = 0;
-    let arr = [];
-    this.selectedCustomerId = this.customerForm.value.customerId;
-    if (this.selectedCustomerId != null && this.selectedCustomerId != 0) {
-      this.foundCustomerProduct = true;
-      this.customerServ.getAllCustomerProduct(0, 0, this.selectedCustomerId).subscribe({
-        next: (resp) => {
-          //console.log(resp);
-          for (let product of resp.data) {
-            this.allCustomerProduct.push(product);
-            arr.push(product.id);
+  loadCustomers(term: string = "", pageNo: number = 0): Observable<Object[]> {
+    return this.customerServ.getAllCustomersBasicDetails(term, pageNo, 10).pipe(
+      switchMap((response: any) => {
+        let items = [];
+        if (response.status == Constant.SUCCESS) {
+          items = response.data;
+        } else {
+          if (response.message instanceof Object) {
+            this.toast.error(response.message.text)
+          } else {
+            this.toast.error(response.message);
           }
-          this.selectedProductIds = arr;
-        }, error(err) {
-          console.log(err);
-        },
+        }
+        return of(items);
+      }),
+      catchError((error: any) => {
+        console.log(error);
+        this.toast.error(Constant.SOMETHING_WENT_WRONG);
+        return of([]);
       })
-    } else {
-      this.foundCustomerProduct = false;
-      this.selectedProductIds = [];
-    }
+    );
   }
+
+  compareFn(user1: User, user2: User) {
+    return user1 && user2 ? user1.id === user2.id : user1 === user2;
+  }
+
+  fetchUser() {
+    this.userLoading = true;
+    this.loadUsers(this.searchTerm, ++this.userPageNo);
+  }
+
+  getAllRoles() {
+    this.roleMgntServ.getAllUserRolesBasicDetails().subscribe({
+      next: (resp: any) => {
+        resp.data.forEach((role: any) => {
+          this.allRoles.push(role)
+        });
+      }, error(err) {
+        console.log(err);
+      },
+    })
+  }
+
+  currentUser: any;
+  selectedRole: any;
+  selectedCustomerId: any;
+  selectedProductIds: any[] = [];
+
+  arePasswordfieldsRequired: boolean = true;
+  foundCustomerProduct: boolean = false;
+  fetchedCustomer: any;
+  isRoleFieldValid: boolean = false;
+  isRoleFieldValidForUpdate: boolean = true;
 
   createNewUser(formGroupDirective: FormGroupDirective) {
     if (this.userForm.valid) {
-      let newUserObject: User = {
-        'id': 0,
+      let newUserObject: any = {
         'name': this.userForm.value.name,
-        'username': this.userForm.value.username,
+        'userName': this.userForm.value.userName,
         'email': this.userForm.value.email,
         'password': this.userForm.value.password,
-        'roleId': this.selectedRole,
-        'customerId': this.selectedCustomerId,
+        'roleId': this.userForm.value.roleName,
+        'customerId': this.userForm.value.customerName,
         'productIds': this.selectedProductIds,
+        'userTypeId':this.userForm.value.userTypeId
       }
 
-      let generatedUserId = 0;
-      console.log(newUserObject);
-
+      let newUserObject2: any = {
+        'id': 0,
+        'sNo': 0,
+        'name': this.userForm.value.name,
+        'userName': this.userForm.value.userName,
+        'email': this.userForm.value.email,
+        'password': this.userForm.value.password,
+        'roleId': this.userForm.value.roleName,
+        'customerId': this.userForm.value.customerName,
+        'customerName': '',
+        'productIds': this.selectedProductIds,
+      }
       this.userMgntServ.createNewUser(newUserObject).subscribe({
         next: (resp) => {
           if (resp.status === "success") {
             this.toast.success(resp.message);
-            generatedUserId = resp.data;
-            newUserObject.id = generatedUserId;
-            if (this.searchTerm == '' && this.allUsers.length < this.pageSize) {
-              this.allUsers.push(newUserObject);
-            } else if (newUserObject.name?.toLowerCase().includes(this.searchTerm.toLowerCase())) {
-              newUserObject.id = (this.allUsers.length + 1).toString();
-              this.allUsers.push(newUserObject);
-            }
+            newUserObject2.id = resp.data.id;
+            newUserObject2.sNo = this.allUsers.length + 1;
+            this.allUsers.push(newUserObject2);
             this.grid.dataSource.data = this.allUsers;
+
+            this.selectedProductIds = [];
+            this.fetchedCustomer=null;
+            this.fetchedCustomer = [];
+            this.editorTitle = "ADD USER";
+            this.buttonText = "Save";
+            this.userForm.reset()
+            formGroupDirective.resetForm();
           }
           else if (resp.status === "error") {
             this.toast.error(resp.message);
@@ -480,45 +372,73 @@ export class MyComponent implements OnInit {
           console.log(err);
         },
       })
-      this.selectedRole = "";
-      this.selectedCustomerId = [];
-      this.customerForm.reset();
-      this.selectedProductIds = [];
-      this.editorTitle = "ADD USER";
-      this.buttonText = "Save";
-      this.userForm.reset()
-      formGroupDirective.resetForm();
     }
     else {
       this.toast.error("Invalid input");
     }
   }
 
-  fetchedCustomer: any;
-
-  compareFn(user1: User, user2: User) {
-    return user1 && user2 ? user1.id === user2.id : user1 === user2;
+  onCustomerSelectionChange() {
+    this.allCustomerProduct.length = 0;
+    this.selectedProductIds = [];
+    let arr = [];
+    this.selectedCustomerId = this.userForm.value.customerName;
+    if (this.selectedCustomerId != null && this.selectedCustomerId != 0) {
+      this.foundCustomerProduct = true;
+      this.customerServ.getAllCustomerProduct(0, 0, this.selectedCustomerId).subscribe({
+        next: (resp) => {
+          for (let product of resp.data) {
+            this.allCustomerProduct.push(product);
+            arr.push(product.id);
+          }
+        }, error(err) {
+          console.log(err);
+        },
+      })
+    } else {
+      this.foundCustomerProduct = false;
+      this.selectedProductIds = [];
+    }
   }
 
-  editExistingUser(user: User) {
+  fcpDisable = false;
+  editExistingUser(user: any) {
+    console.log(user);
+    if (this.loggedUser.id == user.id) {
+      this.userForm.get('roleName')?.disable();
+      this.userForm.get('customerName')?.disable();
+      this.fcpDisable = true;
+    } else {
+      this.userForm.get('roleName')?.enable();
+      this.userForm.get('customerName')?.enable();
+      this.fcpDisable = false;
+    }
+    // console.log(user);
     this.arePasswordfieldsRequired = false;
     this.editorTitle = "UPDATE USER";
     this.buttonText = "Update";
     this.userForm.patchValue({
+      'id': user.id,
       'name': user.name,
-      'username': user.username,
+      'userName': user.userName,
       'email': user.email,
-      'password': '',
-      'confirmPassword': ''
+      'userTypeId':user.userTypeId,
+      'password': '123456',
+      'confirmPassword': '123456'
     })
     this.isRoleFieldValid = true;
     this.selectedRole = user.roleId;
     this.currentUser = user;
-    // let item = { id: 4, name: 'ads' };
-    // this.fetchedCustomer = item;
-    this.customerForm.value.customerId = user.customerId;
+    if (user.customerId == null || user.customerId == 0) {
+      this.fetchedCustomer = null;
+    } else {
+      let currCustOfUser = { id: user.customerId, name: user.customerName };
+      this.fetchedCustomer = currCustOfUser;
+    }
+    this.userForm.value.customerName = user.customerId;
     this.foundCustomerProduct = true;
     this.onCustomerSelectionChange();
+    this.selectedProductIds = user.productIds;
   }
 
   updateExistingUser(formGroupDirective: FormGroupDirective) {
@@ -526,30 +446,58 @@ export class MyComponent implements OnInit {
       let updateUserObject: any = {
         'id': this.currentUser.id,
         'name': this.userForm.value.name,
-        "username": this.userForm.value.username,
+        "userName": this.userForm.value.userName,
         "email": this.userForm.value.email,
-        "roleId": this.selectedRole,
+        "roleId": this.userForm.value.roleName,
         "customerId": this.selectedCustomerId,
-        "productIds": this.selectedProductIds
+        "productIds": this.selectedProductIds,
+        "userTypeId":this.userForm.value.userTypeId
       }
-      console.log(updateUserObject);
+
+      let updateUserObject2: any = {
+        'sNo': this.currentUser.sNo,
+        'id': this.currentUser.id,
+        'name': this.userForm.value.name,
+        "userName": this.userForm.value.userName,
+        "email": this.userForm.value.email,
+        "roleId": this.userForm.value.roleName,
+        "customerId": this.selectedCustomerId,
+        "productIds": this.selectedProductIds,
+        "userTypeId": this.userForm.value.userTypeId
+      }
+
+      // console.log(updateUserObject);
+
 
       if (updateUserObject.id != 0) {
         this.userMgntServ.updateExistingUser(updateUserObject).subscribe({
           next: (resp) => {
-            console.log(resp);
             if (resp.status === "success") {
               this.toast.success(resp.message);
               let index = this.allUsers.findIndex(user => user.id === updateUserObject.id);
               let upduser = this.allUsers[index];
-              upduser.name = updateUserObject.name;
-              upduser.username = updateUserObject.username;
-              upduser.email = updateUserObject.email;
-              upduser.roleId = updateUserObject.roleId;
-              upduser.customerId = updateUserObject.customerId;
-              upduser.productIds = updateUserObject.productIds;
+              upduser.sNo = updateUserObject2.sNo;
+              upduser.name = updateUserObject2.name;
+              upduser.userName = updateUserObject2.userName;
+              upduser.email = updateUserObject2.email;
+              upduser.roleId = updateUserObject2.roleId;
+              upduser.customerId = updateUserObject2.customerId;
+              upduser.productIds = updateUserObject2.productIds;
+              upduser.userTypeId = updateUserObject2.userTypeId;
               this.allUsers[index] = upduser;
               this.grid.dataSource.data = this.allUsers;
+
+              this.arePasswordfieldsRequired = true;
+              this.selectedRole = [];
+              this.selectedCustomerId = null;
+              this.selectedProductIds = [];
+              this.foundCustomerProduct = false;
+              this.editorTitle = "ADD USER";
+              this.buttonText = "Save";
+              this.userForm.reset()
+              this.fetchedCustomer = [];
+              formGroupDirective.resetForm();
+
             }
             else if (resp.status === "error") {
               this.toast.error(resp.message);
@@ -560,15 +508,7 @@ export class MyComponent implements OnInit {
             console.log(err);
           },
         })
-        this.arePasswordfieldsRequired = true;
-        this.selectedRole = "";
-        this.selectedCustomerId = [];
-        this.selectedProductIds = [];
-        this.foundCustomerProduct = false;
-        this.editorTitle = "ADD USER";
-        this.buttonText = "Save";
-        this.userForm.reset()
-        formGroupDirective.resetForm();
+
       } else {
         this.toast.error("role id not found");
       }
@@ -578,55 +518,130 @@ export class MyComponent implements OnInit {
   }
 
   removeExistingUser(user: User) {
-    const userId = user.id;
-    if (userId != 0 || userId != null) {
-      this.userMgntServ.removeUser(userId).subscribe({
-        next: (resp) => {
-          if (resp.status === "success") {
-            this.toast.success(resp.message);
-            let userObj: User;
-            for (let i of this.allUsers) {
-              if (i.id == userId) {
-                userObj = i;
-                break;
-              }
-            }
-            this.allUsers = this.allUsers.filter(item => item !== userObj);
-            this.grid.dataSource.data = this.allUsers;
-
-            // reseting form for add user
-            this.arePasswordfieldsRequired = true;
-            this.selectedRole = "";
-            this.userForm.reset()
-            this.editorTitle = "ADD USER";
-            this.buttonText = "Save";
-
-
-          } else if (resp.status === "error") {
-            this.toast.error(resp.message);
-          }
-        },
-        error(err) {
-          console.log(err);
-        },
-      })
+    if (this.loggedUser.id == user.id) {
+      this.toast.error("Denied");
     } else {
-      this.toast.error("Invalid role ID")
+      const userId = user.id;
+      if (userId != 0 || userId != null) {
+        this.userMgntServ.removeUser(userId).subscribe({
+          next: (resp) => {
+            if (resp.status === "success") {
+              this.toast.success(resp.message);
+              let userObj: User;
+              for (let i of this.allUsers) {
+                if (i.id == userId) {
+                  userObj = i;
+                  break;
+                }
+              }
+              this.allUsers = this.allUsers.filter(item => item !== userObj);
+              this.grid.dataSource.data = this.allUsers;
+              // reseting form for add user
+              this.arePasswordfieldsRequired = true;
+              this.selectedRole = [];
+              this.fetchedCustomer = [];
+              this.selectedProductIds = [];
+              this.foundCustomerProduct = false;
+              this.userForm.reset()
+              this.editorTitle = "ADD USER";
+              this.buttonText = "Save";
+            } else if (resp.status === "error") {
+              this.toast.error(resp.message);
+            }
+          },
+          error(err) {
+            console.log(err);
+          },
+        })
+      } else {
+        this.toast.error("Invalid role ID")
+      }
     }
   }
 
-  addNew(formGroupDirective: FormGroupDirective) {
+  onScrollEnd(): void {
+    const currentItems = this.customerSubject.getValue();
+    this.customerLoading = true;
+    this.loadCustomers(this.customerSearchTermValue, ++this.customerPageNo).pipe(take(1)).subscribe(newItems => {
+      const updatedItems = currentItems.concat(newItems);
+      this.customerSubject.next(updatedItems);
+      this.customerLoading = false;
+    });
+  }
+
+  onRoleSelectionChange($event: Event) {
+    if (this.selectedRole === "" || this.selectedRole == null) {
+      this.isRoleFieldValid = false;
+    } else {
+      this.isRoleFieldValid = true;
+    }
+  }
+
+  addNew() {
     this.arePasswordfieldsRequired = true;
-    this.selectedRole = "";
-    this.selectedCustomerId = [];
+    this.selectedRole = [];
+    this.selectedCustomerId = null;
     this.selectedProductIds = [];
+    this.fetchedCustomer = [];
+    this.isRoleFieldValid = false;
     this.foundCustomerProduct = false;
+    this.userForm.get('roleName')?.enable();
+    this.userForm.get('customerName')?.enable();
+    this.fcpDisable = false;
     this.userForm.reset()
-    formGroupDirective.resetForm();
     this.editorTitle = "ADD USER";
     this.buttonText = "Save";
   }
 
+  onSearch(event: { term: string }): void {
+    this.customerPageNo = 0;
+    this.customerSearchTerms.next(event.term);
+  }
+
+  onSubmit(formGroupDirective: FormGroupDirective) {
+    if (this.buttonText === "Save") {
+      this.createNewUser(formGroupDirective);
+    } else if (this.buttonText === "Update") {
+      this.updateExistingUser(formGroupDirective);
+    }
+  }
+
+  addScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.addEventListener('scroll', this.onTableScroll.bind(this));
+    }
+  }
+
+  removeScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.removeEventListener('scroll', this.onTableScroll.bind(this));
+    }
+  }
+
+  onTableScroll(event: Event): void {
+    const element = (event.target as HTMLElement);
+    const atBottom = element.scrollHeight - element.scrollTop - 5 <= element.clientHeight;
+    if (atBottom) {
+      this.fetchUser();
+    }
+  }
+
+  openDeleteConfirmation(user: any) {
+    let name = user.name;
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      width: '300px',
+      data: { name },
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        this.removeExistingUser(user);
+      }
+    });
+  }
+
+
 
 
 }
+

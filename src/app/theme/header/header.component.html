@@ -16,15 +16,15 @@
   </button>
   @if (!darkTheme) {
     <button mat-icon-button class="hide-small" (click)="darkMode()">
+      <mat-icon>brightness_3</mat-icon>
+    </button>
+  }
+  @if (darkTheme) {
+    <button mat-icon-button class="hide-small" (click)="darkMode()">
       <mat-icon>wb_sunny</mat-icon>
     </button>
     }
   
-    @if (darkTheme) {
-    <button mat-icon-button class="hide-small" (click)="darkMode()">
-      <mat-icon>brightness_3</mat-icon>
-    </button>
-  }
   <button mat-icon-button class="hide-small" (click)="toggleFullscreen()">
     <mat-icon>fullscreen</mat-icon>
   </button>

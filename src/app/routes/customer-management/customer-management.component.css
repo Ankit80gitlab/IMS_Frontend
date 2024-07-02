@@ -1,0 +1,11 @@
+.grid-heightP {
+  height: 230px;
+  overflow-y: scroll;
+}
+
+
+.disabled-row {
+  pointer-events: none;
+  opacity: 0.6;
+  background-color: #f0f0f0;
+}

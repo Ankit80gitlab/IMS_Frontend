@@ -6,7 +6,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Sort } from '@angular/material/sort';
 import { MtxGrid, MtxGridColumn, MtxGridModule } from '@ng-matero/extensions/grid';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
@@ -19,6 +18,11 @@ import { Role } from 'app/model-class/role';
 import { ToastrService } from 'ngx-toastr';
 import { Feature } from 'app/model-class/features';
 import { fromEvent, filter, debounceTime, distinctUntilChanged, tap } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, of, Subject, switchMap, take } from "rxjs";
+import { Constant } from 'app/utility/constant';
+import { CustomerManagementService } from 'app/services/customer-management.service';
+import { DeleteDialogComponent } from 'app/dialog/delete-dialog/delete-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 export interface featureId {
   id: number;
@@ -27,7 +31,7 @@ export interface featureId {
 export interface RoleInterface {
   sNo: number;
   id: number;
-  name: string;
+  name: any;
   createdBy: number;
   featureIds: featureId
 }
@@ -56,15 +60,27 @@ export interface RoleInterface {
   styleUrl: './role-management.component.css'
 })
 export class RoleManagementComponent implements OnInit {
-
-  private readonly toast = inject(ToastrService);
+  
   @ViewChild('grid') grid!: MtxGrid;
   @ViewChild('input') input!: ElementRef;
 
-  constructor(private roleMgntServ: RoleManagementService) {
-  }
+  private readonly toast = inject(ToastrService);
+  private roleMgntServ = inject(RoleManagementService);
+  private readonly fb = inject(FormBuilder);
+  private customerServ = inject(CustomerManagementService);
+
+  private customerSubject: BehaviorSubject<Object[]> = new BehaviorSubject<Object[]>([]);
+  private customerSearchTerms = new Subject<string>();
+  customer$: Observable<Object[]> = this.customerSubject.asObservable();
+  customerSearchTermValue: string = '';
+
+  roleLoading: boolean = false;
+  customerLoading: boolean = false;
+  roleForm!:FormGroup;
+  customerForm!:FormGroup;
 
   currentRoleId: number = 0;
+  currentSerialNo:number = 0;
 
   selectedFeatureOfRole: any;
   allRoles: any[] = [];
@@ -73,21 +89,17 @@ export class RoleManagementComponent implements OnInit {
   isFeatureFieldValid: boolean = false;
   searchItemStatus: boolean = false;
 
-
-  pageNo: number = 0;
-  pageSize: number = 50;
+  rolePageNo: number = 0;
+  rolePageSize: number = 50;
   totalRecords: number = 0;
+
   searchTerm: string = '';
 
-  roleForm = new FormGroup({
-    "name": new FormControl('', [Validators.required]),
-  })
-
-  isLoading = false;
+  isLoading:boolean= false;
   columnSortable = true;
   rowHover = true;
   rowStriped = true;
-  showPaginator = true;
+  showPaginator = false;
   editorTitle: string = "ADD ROLE";
   buttonText: string = "Save";
 
@@ -131,61 +143,131 @@ export class RoleManagementComponent implements OnInit {
           color: 'warn',
           icon: 'delete',
           tooltip: "Delete Role",
-          pop: {
-            title: "Confirm delete?",
-            closeText: "No",
-            okText: "Yes",
-          },
-          click: role => this.removeExistingRole(role),
+          click: role => this.openDeleteConfirmation(role),
         },
       ],
     },
   ];
 
-  ngOnInit() {
-    this.getAllRoles();
-    this.getAllFeatures();
+  constructor(private dialog: MatDialog) {
+    this.roleForm = this.fb.group({
+      name: new FormControl('', Validators.required),
+      customerId: [null],
+      customerName: [null],
+    });
   }
 
-  
+  ngOnInit() {
+    this.getAllFeatures();
+    this.loadRoles();
+
+    
+    this.loadCustomers().pipe(
+      take(1),
+    ).subscribe(initialItems => {
+      this.customerSubject.next(initialItems);
+    });
+    this.customerSearchTerms.pipe(
+      debounceTime(300),
+      tap(() => this.customerLoading = true),
+      switchMap(term => {
+        this.customerSearchTermValue = term;
+        return this.loadCustomers(term);
+      })
+    ).subscribe(obj => {
+      this.customerSubject.next(obj);
+      this.customerLoading = false;
+    });
+  }
+
   ngAfterViewInit() {
+    this.addScrollEventListener();
     fromEvent(this.input.nativeElement, 'keyup')
       .pipe(
         filter(Boolean),
         debounceTime(500),
         distinctUntilChanged(),
         tap(text => {
-          this.searchRole();
+          this.allRoles = [];
+          this.rolePageNo=0;
+          this.loadRoles(this.searchTerm,0);
         })
       )
       .subscribe();
+  };
+
+  ngOnDestroy(): void {
+    this.removeScrollEventListener();
+  };
+
+  loadRoles(term: string = '', pageNo: number = 0){
+    this.roleMgntServ.getAllRoles(term, pageNo, this.rolePageSize).subscribe({
+      next : response => {
+        if (response.status == Constant.SUCCESS) {
+          let i = 0;
+          response.data.forEach((role: RoleInterface) => {
+            role.sNo = this.rolePageSize * pageNo + i + 1;
+            this.allRoles.push(role);
+            i++;
+          });
+          this.grid.dataSource.data = this.allRoles;
+          this.totalRecords = this.totalRecords + this.rolePageSize + 1;
+        } 
+      },
+      error: err => {
+        console.log(err);
+      },
+    }); 
   }
 
-
-
-  getAllRoles() {
-    this.roleMgntServ.getAllRoles(this.pageNo, this.pageSize).subscribe({
-      next: (resp: any) => {
-        let i = 0;
-        if (resp.message.length == 0) {
-          this.toast.success('No roles Found');
+  loadCustomers(term: string = "", pageNo: number = 0): Observable<Object[]> {
+    return this.customerServ.getAllCustomersBasicDetails(term, pageNo, 10).pipe(
+      switchMap((response: any) => {
+        let items = [];
+        if (response.status == "success") {
+          items = response.data;
+        } else {
+          if (response.message instanceof Object) {
+            this.toast.error(response.message.text)
+          } else {
+            this.toast.error(response.message);
+          }
         }
-        resp.message.forEach((role: RoleInterface) => {
-          role.sNo = this.pageSize * this.pageNo + i + 1;
-          this.allRoles.push(role)
-          i++;
-        });
-        this.pageNo = this.pageNo + 1;
-        this.totalRecords = this.totalRecords + this.pageSize + 1;
-      }, error(err) {
-        console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-      },
-    })
+        return of(items);
+      }),
+      catchError((error: any) => {
+        console.log(error);
+        this.toast.error("SOMETHING_WENT_WRONG");
+        return of([]);
+      })
+    );
+  }
+  customerPageNo: number = 0;
+
+  compareFn(user1: any, user2: any) {
+    return user1 && user2 ? user1.id === user2.id : user1 === user2;
+  }
+
+  onCustomerSelectionChange() {
+  }
+
+  onSearch(event: { term: string }): void {
+    this.customerPageNo = 0;
+    this.customerSearchTerms.next(event.term);
+  }
+
+  onScrollEnd(): void {
+    const currentItems = this.customerSubject.getValue();
+    this.customerLoading = true;
+    this.loadCustomers(this.customerSearchTermValue, ++this.customerPageNo).pipe(take(1)).subscribe(newItems => {
+      const updatedItems = currentItems.concat(newItems);
+      this.customerSubject.next(updatedItems);
+      this.customerLoading = false;
+    });
   }
 
   getAllFeatures() {
-    this.roleMgntServ.getAllFeatures(0, 10).subscribe({
+    this.roleMgntServ.getAllFeatures(0, 0).subscribe({
       next: (resp) => {
         for (let feat of resp.message) {
           this.allFeatures.push(feat);
@@ -194,59 +276,6 @@ export class RoleManagementComponent implements OnInit {
         console.log(err);
       },
     })
-  }
-
-
-  Fetch() {
-    if (this.searchTerm == '') {
-      this.getAllRoles();
-    } else {
-      this.pageNo = this.pageNo + 1;
-      this.searchApi();
-    }
-  }
-
-  searchRole() {
-    if (this.searchTerm == '') {
-      this.searchItemStatus = false;
-      this.grid.dataSource.data = [];
-      this.allRoles=[];
-      this.pageNo = 0;
-      this.getAllRoles();
-    } else {
-      this.searchItemStatus = true;
-      this.pageNo = 0;
-      this.searchApi();
-    }
-  }
-
-  searchApi() {
-    if (this.pageNo == 0) {
-      this.grid.dataSource.data = [];
-      this.allRoles = [];
-    }
-    
-    this.roleMgntServ.searchRole(this.searchTerm, this.pageNo, this.pageSize).subscribe({
-      next: resp => {
-        let i = 0;
-        // console.log(resp.data);
-        if (resp.data.length > 0) {
-          resp.data.forEach((user: RoleInterface) => {
-            user.sNo = this.pageSize * this.pageNo + i + 1;
-            this.allRoles.push(user);
-            i++;
-          });
-          this.grid.dataSource.data = this.allRoles;
-        }
-        else {
-          this.toast.success(resp.message)
-        }
-      },
-      error: err => {
-        console.log(err);
-        alert('SOMETHING_WENT_WRONG_TRY_AGAIN_LATER');
-      },
-    });
   }
 
   onFeatureIdChange($event: Event) {
@@ -266,31 +295,27 @@ export class RoleManagementComponent implements OnInit {
   }
 
   createNewRole(formGroupDirective: FormGroupDirective) {
+    
     if (this.roleForm.valid) {
-      let newRoleObject: Role = {
-        'id': 0,
+      let newRoleObject: any = {
         'name': this.roleForm.value.name?.toUpperCase(),
-        'createdBy': 1,
         'featureIds': this.selectedFeatureOfRole,
-      }
-      let generatedRoleId = 0;
+      } 
       this.roleMgntServ.createNewRole(newRoleObject).subscribe({
-        next: (resp) => {
+        next: (resp) => {          
           if (resp.status === "success") {
             this.toast.success(resp.message);
-            generatedRoleId = resp.data;
-            newRoleObject.id = generatedRoleId;
-            if (this.searchTerm == '' && this.allRoles.length < this.pageSize) {
-              this.allRoles.push(newRoleObject);
-            } else if (
-              newRoleObject.name
-                ?.toLowerCase()
-                .includes(this.searchTerm.toLowerCase())
-            ) {
-              newRoleObject.id = (this.allRoles.length + 1).toString();
-              this.allRoles.push(newRoleObject);
-            }
+            newRoleObject.id = resp.data.id;
+            newRoleObject.sNo = this.allRoles.length + 1;
+            this.allRoles.push(newRoleObject);
             this.grid.dataSource.data = this.allRoles;
+
+            this.selectedFeatureOfRole = null;
+            this.isFeatureFieldValid = false;
+            this.editorTitle = "ADD ROLE";
+            this.buttonText = "Save";
+            this.roleForm.reset()
+            formGroupDirective.resetForm();
           }
           else if (resp.status === "error") {
             this.toast.error(resp.message);
@@ -301,18 +326,14 @@ export class RoleManagementComponent implements OnInit {
           console.log(err);
         },
       })
-      this.selectedFeatureOfRole = "";
-      this.editorTitle = "ADD ROLE";
-      this.buttonText = "Save";
-      this.roleForm.reset()
-      formGroupDirective.resetForm();
+     
     }
     else {
       this.toast.error("Invalid input");
     }
   }
 
-  editExistingRole(role: Role) {
+  editExistingRole(role: RoleInterface) {
     this.editorTitle = "UPDATE ROLE";
     this.buttonText = "Update";
     this.roleForm.patchValue({
@@ -320,29 +341,32 @@ export class RoleManagementComponent implements OnInit {
     })
     this.selectedFeatureOfRole = role.featureIds;
     this.currentRoleId = role.id;
+    this.currentSerialNo = role.sNo;
   }
 
   updateExistingRole(formGroupDirective: FormGroupDirective) {
     if (this.roleForm.valid) {
-      let updateRoleObject: Role = {
+      let updateRoleObject: RoleInterface = {
         'id': this.currentRoleId,
+        'sNo':this.currentSerialNo,
         'name': this.roleForm.value.name?.toUpperCase(),
         'createdBy': 1,
         'featureIds': this.selectedFeatureOfRole,
       }
-
-      console.log(updateRoleObject);
-
       if (this.currentRoleId != 0) {
         this.roleMgntServ.updateExistingRole(updateRoleObject).subscribe({
           next: (resp) => {
-            console.log(resp);
-
             if (resp.status === "success") {
               this.toast.success(resp.message);
               let index = this.allRoles.findIndex(role => role.id === updateRoleObject.id);
               this.allRoles[index] = updateRoleObject;
               this.grid.dataSource.data = this.allRoles;
+
+              this.selectedFeatureOfRole = "";
+              this.editorTitle = "ADD ROLE";
+              this.buttonText = "Save";
+              this.roleForm.reset()
+              formGroupDirective.resetForm();
 
             }
             else if (resp.status === "error") {
@@ -354,11 +378,7 @@ export class RoleManagementComponent implements OnInit {
             console.log(err);
           },
         })
-        this.selectedFeatureOfRole = "";
-        this.editorTitle = "ADD ROLE";
-        this.buttonText = "Save";
-        this.roleForm.reset()
-        formGroupDirective.resetForm();
+       
       } else {
         this.toast.error("role id not found");
       }
@@ -368,7 +388,6 @@ export class RoleManagementComponent implements OnInit {
   }
 
   removeExistingRole(role: Role) {
-    console.log(this.allRoles);
     const roleId = role.id;
     if (roleId != 0 || roleId != null) {
       this.roleMgntServ.removeExistingRole(roleId).subscribe({
@@ -383,8 +402,6 @@ export class RoleManagementComponent implements OnInit {
               }
             }
             this.allRoles = this.allRoles.filter(item => item !== roleObj);
-            console.log(this.allRoles);
-
           } else if (resp.status === "error") {
             this.toast.error(resp.message);
           }
@@ -407,21 +424,43 @@ export class RoleManagementComponent implements OnInit {
     this.buttonText = "Save";
   }
 
-  onPaginateChange(event: any) {
-    console.log('paginate', event);
-    if (event.pageSize != this.pageSize) {
-      this.allRoles = [];
-      this.pageNo = 0;
-      this.pageSize = event.pageSize;
-      if (this.searchTerm != '') {
-        this.searchApi();
-      } else {
-        this.getAllRoles();
-      }
-    } else if (event.pageIndex >= this.pageNo) {
-      this.getAllRoles();
+
+  addScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.addEventListener('scroll', this.onTableScroll.bind(this));
     }
   }
 
-  //change
+  removeScrollEventListener(): void {
+    if (this.grid.tableContainer && this.grid.tableContainer.nativeElement) {
+      this.grid.tableContainer.nativeElement.removeEventListener('scroll', this.onTableScroll.bind(this));
+    }
+  }
+
+  onTableScroll(event: Event): void {
+    const element = (event.target as HTMLElement);
+    const atBottom = element.scrollHeight - element.scrollTop - 5 <= element.clientHeight;
+    if (atBottom) {
+      this.fetchRole();
+    }
+  }
+
+  fetchRole() {
+    this.roleLoading = true;
+    this.loadRoles(this.searchTerm, ++this.rolePageNo);
+  }
+
+  openDeleteConfirmation(role:any) {
+    let name= role.name;
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      width: '300px',
+      data: { name },
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        this.removeExistingRole(role);
+      }
+    });
+  }
 }

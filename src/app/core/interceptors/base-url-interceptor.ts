@@ -1,23 +1,30 @@
-import { HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import {HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
+import {Injectable} from '@angular/core';
+import {ConfigService} from "@core/ConfigService";
 
-export const BASE_URL = new InjectionToken<string>('BASE_URL');
 
 @Injectable()
 export class BaseUrlInterceptor implements HttpInterceptor {
-  private readonly baseUrl = inject(BASE_URL, { optional: true });
 
-  private hasScheme = (url: string) => this.baseUrl && new RegExp('^http(s)?://', 'i').test(url);
+    private baseUrl!: string | undefined;
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler) {
-    return this.hasScheme(request.url) === false
-      ? next.handle(request.clone({ url: this.prependBaseUrl(request.url) }))
-      : next.handle(request);
-  }
+    constructor(private configService: ConfigService) {
+        configService.backendUrl$.subscribe(url => {
+            this.baseUrl = url;
+        });
+    }
 
-  private prependBaseUrl(url: string) {
-    return [this.baseUrl?.replace(/\/$/g, ''), url.replace(/^\.?\//, '')]
-      .filter(val => val)
-      .join('/');
-  }
+    private hasScheme = (url: string) => this.baseUrl && new RegExp('^http(s)?://', 'i').test(url);
+
+    intercept(request: HttpRequest<unknown>, next: HttpHandler) {
+        return this.hasScheme(request.url) === false
+            ? next.handle(request.clone({url: this.prependBaseUrl(request.url)}))
+            : next.handle(request);
+    }
+
+    private prependBaseUrl(url: string) {
+        return [this.baseUrl?.replace(/\/$/g, ''), url.replace(/^\.?\//, '')]
+            .filter(val => val)
+            .join('/');
+    }
 }

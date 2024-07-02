@@ -15,6 +15,9 @@ import {DeviceConfigurationComponent} from "./routes/device-configuration/device
 import {MapviewComponent} from "./routes/mapview/mapview.component";
 import {CustomerManagementComponent} from "./routes/customer-management/customer-management.component";
 import { MyComponent } from './routes/user-management/user-management.component';
+import { ProfileSettingComponent } from './routes/profile/profile-setting/profile-setting.component';
+import { ProfileOverviewComponent } from './routes/profile/profile-overview/profile-overview.component';
+import { TicketDetailComponent } from './routes/ticket-detail/ticket-detail.component';
 
 export const routes: Routes = [
   {
@@ -35,6 +38,10 @@ export const routes: Routes = [
       { path: 'deviceConfiguration', component: DeviceConfigurationComponent },
       { path: 'mapView', component: MapviewComponent },
       { path: 'customerManagement', component: CustomerManagementComponent },
+      { path: 'profile/overview', component: ProfileOverviewComponent },
+      { path: 'profile/setting', component: ProfileSettingComponent },
+      { path: 'ticketDetail/:id', component: TicketDetailComponent },
+      { path: 'ticketDetail', component: TicketDetailComponent },
     ],
   },
   {

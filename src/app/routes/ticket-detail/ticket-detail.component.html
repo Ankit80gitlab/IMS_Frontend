@@ -1,0 +1,197 @@
+<page-header class="bg-green-600"></page-header>
+<div class="row" *ngIf="!addStatus">
+  <div class="col-md-12">
+    <mat-card>
+      <div style="padding: 2%;">
+        <mat-card>
+          <mat-card-header style="background: #0970af;">
+            <mat-card-title>Feature #1124 [Open]</mat-card-title>
+
+          </mat-card-header>
+          <!-- <div style="margin-left: 2%;">Added by Sj</div> -->
+          <mat-grid-list [cols]="breakpoint" rowHeight="2:0.5" (window:resize)="onResize($event)">
+            <mat-grid-tile>
+              <div><b>Status:</b></div>
+              <div class="text-tile">Pending</div>
+            </mat-grid-tile>
+            <mat-grid-tile>
+              <div><b>Priority:</b></div>
+              <div class="text-tile">Normal</div>
+            </mat-grid-tile>
+            <mat-grid-tile>
+              <div><b>Assignee:</b></div>
+              <div class="text-tile">Shiv</div>
+            </mat-grid-tile>
+            <mat-grid-tile>
+              <div><b>Type:</b></div>
+              <div class="text-tile">Shiv</div>
+            </mat-grid-tile>
+          </mat-grid-list>
+          <div class="editor editor-color">
+            <ngx-editor-menu [editor]="editor" [toolbar]="toolbar">
+            </ngx-editor-menu>
+            <ngx-editor [editor]="editor">
+            </ngx-editor>
+          </div>
+        </mat-card>
+      </div>
+    </mat-card>
+  </div>
+</div>
+
+
+<div *ngIf="addStatus">
+
+  <mat-card>
+    <mat-card-header style="margin:auto">
+      <mat-card-title>Add Ticket</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content style="padding: 5%;">
+      <form [formGroup]="ticketForm" class="form-field-full" #formGroupDirective="ngForm">
+
+        <div class="row">
+          <div class="col-sm-12">
+            <mat-form-field appearance="outline">
+              <mat-label>Subject</mat-label>
+              <input matInput placeholder="Subject" formControlName="subject" required>
+              @if (ticketForm.get('subject')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field class="m-r-8" appearance="outline" style="max-width:300px !important">
+              <mat-label>Type</mat-label>
+              <mat-select required formControlName="type" required>
+                <mat-option value="bug">Bug</mat-option>
+                <mat-option value="support">Support</mat-option>
+                <mat-option value="feature">Feature</mat-option>
+              </mat-select>
+              @if (ticketForm.get('type')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-12">
+            <mat-label style="margin-left: 5px;">Description</mat-label>
+            <div class="editor editor-color" style="margin: 5px;">
+              <ngx-editor-menu [editor]="editor" [toolbar]="toolbar">
+              </ngx-editor-menu>
+              <ngx-editor [editor]="editor" formControlName="description">
+              </ngx-editor>
+            </div>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field class="m-r-8 mx-width" appearance="outline">
+              <mat-label>Issue Related</mat-label>
+              <mat-select required formControlName="issueRelated" required>
+                <mat-option value="hardware">Hardware</mat-option>
+                <mat-option value="software">Software</mat-option>
+              </mat-select>
+              @if (ticketForm.get('issueRelated')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field class="m-r-8 mx-width" appearance="outline">
+              <mat-label>Priority</mat-label>
+              <mat-select required formControlName="priority">
+                <mat-option value="high">High</mat-option>
+                <mat-option value="low">Low</mat-option>
+                <mat-option value="medium">Medium</mat-option>
+                <mat-option value="immediate">Immediate</mat-option>
+              </mat-select>
+              @if (ticketForm.get('priority')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field appearance="outline" class="mx-width">
+              <mat-label>Customer</mat-label>
+              <mtx-select [items]="customer$ | async" bindLabel="name" bindValue="id" [virtualScroll]="true"
+                (scrollToEnd)="onScrollEndCust()" (search)="onSearchCust($event)" [loading]="loading"
+                [searchable]="true" formControlName="customerId" (change)="onSelectionChangeCust($event);">
+              </mtx-select>
+
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field appearance="outline"  class="mx-width">
+              <mat-label>Assignee</mat-label>
+              <mtx-select [items]="user$ | async" bindLabel="userName" bindValue="id" [virtualScroll]="true"
+                (scrollToEnd)="onScrollEnd()" (search)="onSearch($event)" [loading]="loading" [searchable]="true"
+                formControlName="assignee" (change)="onAssigneeChange($event,index);">
+              </mtx-select>
+              <!-- @if (ticketForm.get('assignee')?.invalid) {
+        <mat-error>This field is required</mat-error>
+        } -->
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field class="m-r-8 mx-width" appearance="outline">
+              <mat-label>Products</mat-label>
+              <mtx-select [items]="product$ | async" bindLabel="name" bindValue="id" [virtualScroll]="true"
+                (scrollToEnd)="onScrollEnd1()" (search)="onSearch1($event)" [loading]="loading" [searchable]="true"
+                formControlName="productId" (change)="onProductChange($event)">
+              </mtx-select>
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-6">
+            <mat-form-field class="w-full mx-width" appearance="outline">
+              <mat-label>Device</mat-label>
+              <mtx-select [items]="deviceArray$ | async" bindLabel="name" bindValue="id" formControlName="deviceId"
+                (search)="onDeviceSearch($event)" [searchable]="true">
+              </mtx-select>
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-12">
+            <mat-form-field class="full-width" appearance="outline">
+              <textarea matInput placeholder="Comment" formControlName="comment" name="text" required></textarea>
+            </mat-form-field>
+          </div>
+
+
+          <div class="col-sm-12">
+            <div class="bordered-div">
+            <button mat-raised-button color="success" (click)="onClick($event)">
+              <mat-icon>attachment</mat-icon>Attachments
+            </button>
+          </div>
+            <input #fileUpload type="file" class="input_fileupload--hidden" (input)="onInput($event)"
+              (change)="getFileDetails($event)" [accept]="accept" multiple formControlName="inputFileName">
+            <div style="margin-top: 5px;">
+              <mat-chip-list #chipList>
+                <ng-container *ngFor="let file of myFiles; let i = index">
+                  <mat-chip [color]="color" (removed)="onFileRemove(i)">
+                    {{i + 1}}. {{file.name}} - {{file.type}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip>
+                </ng-container>
+              </mat-chip-list>
+            </div>
+
+          </div>
+
+
+        </div>
+
+        <div class="m-t-8 d-flex justify-content-end" *ngIf="addStatus">
+          <button mat-raised-button color="primary" (click)="addTicket(formGroupDirective)">Save</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+</div>

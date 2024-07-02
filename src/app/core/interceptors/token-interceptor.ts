@@ -3,13 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TokenService } from '@core/authentication';
 import { catchError, tap, throwError } from 'rxjs';
-import { BASE_URL } from './base-url-interceptor';
+import {ConfigService} from "@core/ConfigService";
 
 @Injectable()
 export class TokenInterceptor implements HttpInterceptor {
   private readonly router = inject(Router);
   private readonly tokenService = inject(TokenService);
-  private readonly baseUrl = inject(BASE_URL, { optional: true });
+  private baseUrl!:string | undefined;
+  constructor(private configService:ConfigService) {
+    configService.backendUrl$.subscribe(url => {this.baseUrl = url;});
+  }
 
   private hasHttpScheme = (url: string) => new RegExp('^http(s)?://', 'i').test(url);
 

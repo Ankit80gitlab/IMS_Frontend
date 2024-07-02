@@ -15,8 +15,7 @@ import { NgProgressHttpModule } from 'ngx-progressbar/http';
 import { NgProgressRouterModule } from 'ngx-progressbar/router';
 import { ToastrModule } from 'ngx-toastr';
 
-import { BASE_URL, appInitializerProviders, httpInterceptorProviders } from '@core';
-import { environment } from '@env/environment';
+import {appInitializerProviders, httpInterceptorProviders } from '@core';
 import { PaginatorI18nService } from '@shared';
 import { routes } from './app.routes';
 import { FormlyConfigModule } from './formly-config.module';
@@ -24,6 +23,9 @@ import { FormlyConfigModule } from './formly-config.module';
 import { LoginService } from '@core/authentication/login.service';
 import { FakeLoginService } from './fake-login.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {ConfigService} from "@core/ConfigService";
+import { WebSocketState } from '@stomp/stompjs';
+import { WebsocketServiceService } from './services/websocket-service.service';
 
 // Required for AOT compilation
 export function TranslateHttpLoaderFactory(http: HttpClient) {
@@ -32,6 +34,7 @@ export function TranslateHttpLoaderFactory(http: HttpClient) {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    WebsocketServiceService,
     ConfirmationService, MessageService,
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),
@@ -54,13 +57,6 @@ export const appConfig: ApplicationConfig = {
       }),
       FormlyConfigModule.forRoot()
     ),
-    { provide: BASE_URL, useValue: environment.baseUrl },
-    // ==================================================
-    // 👇 ❌ Remove it in the realworld application
-    //
-    // { provide: LoginService, useClass: FakeLoginService },
-    //
-    // ==================================================
     httpInterceptorProviders,
     appInitializerProviders,
     {

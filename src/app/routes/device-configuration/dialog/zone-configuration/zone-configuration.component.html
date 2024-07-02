@@ -1,5 +1,7 @@
+<h2 mat-dialog-title>{{saveBtnText}} Zone</h2>
+<mat-divider></mat-divider>
 <mat-dialog-content>
-    <form [formGroup]="zoneForm" #formGroupDirective="ngForm" class="form-field-full" >
+    <form [formGroup]="zoneForm" #formGroupDirective="ngForm" class="form-field-full">
         <mat-form-field class="m-r-8" appearance="outline">
             <mat-label>Name</mat-label>
             <input matInput placeholder="Name" formControlName="name" required>
@@ -7,7 +9,6 @@
             <mat-error>This field is required</mat-error>
             }
         </mat-form-field>
-        <mat-divider class="m-y-16"></mat-divider>
         <mat-form-field class="m-r-8" appearance="outline">
             <mat-label>Customer</mat-label>
             <mtx-select [items]="customer$ | async" bindLabel="name" bindValue="id"
@@ -20,20 +21,13 @@
             <mat-error>This field is required</mat-error>
             }
         </mat-form-field>
-    </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-4">
-                <button mat-raised-button color="custom-green" (click)="onCloseClick()">Close</button>
-            </div>
-            <div class="col-md-4">
-                <button mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button>
-            </div>
-            <div class="col-md-4">
-                <button mat-raised-button color="primary" (click)="onSaveClick()">{{saveBtnText}}</button>
+        <mat-divider class="m-y-16"></mat-divider>
+        <div class="container-fluid">
+            <div class="row">
+                <button class="col-sm-4" mat-raised-button color="custom-green" (click)="onCloseClick(formGroupDirective)">Close</button>
+                <button class="col-sm-4" mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button>
+                <button class="col-sm-4" mat-raised-button color="primary" (click)="onSaveClick()">{{saveBtnText}}</button>
             </div>
         </div>
-    </div>
-</mat-dialog-actions>
+    </form>
+</mat-dialog-content>

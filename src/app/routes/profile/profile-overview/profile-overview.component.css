@@ -1,0 +1,10 @@
+mat-grid-tile {
+    background: lightblue;
+}
+
+.grid-tile {
+    color: black;
+    font-size: small;
+    font-weight: 600;
+
+}
