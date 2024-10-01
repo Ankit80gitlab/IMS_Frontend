@@ -1,0 +1,21 @@
+/* For Chrome, Safari, Edge, Opera */
+.no-arrows::-webkit-outer-spin-button,
+.no-arrows::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* For Firefox */
+.no-arrows[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.copyButton {
+    cursor: pointer;
+    color: #3f51b5;
+    transition: color 0.3s ease;
+}
+
+.copyButton:hover {
+    color: #1e88e5;
+}

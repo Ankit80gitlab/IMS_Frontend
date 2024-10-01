@@ -1,7 +1,7 @@
 import { Component, ElementRef, HostListener, Renderer2, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnInit, inject } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { RoleManagementService } from 'app/services/role-management.service';
 import { UserManagementService } from 'app/services/user-management.service';
 import { User } from 'app/model-class/user';
-import { Toast, ToastrService } from 'ngx-toastr';
+import { ToastrService } from 'ngx-toastr';
 import { CustomerManagementService } from 'app/services/customer-management.service';
 import { fromEvent, filter, debounceTime, distinctUntilChanged, tap } from 'rxjs';
 import { AsyncPipe, NgIf } from "@angular/common";
@@ -28,6 +28,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DeleteDialogComponent } from 'app/dialog/delete-dialog/delete-dialog.component';
 import { Subscription } from 'rxjs';
 import { AuthService } from '@core';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface UserInterface {
   sNo: number;
@@ -64,7 +65,8 @@ export interface UserInterface {
     MatError,
     NgIf,
     AsyncPipe,
-    MatTableModule],
+    MatTableModule,
+    MatIconModule],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.css'
 })
@@ -150,13 +152,12 @@ export class MyComponent implements OnInit {
       id: new FormControl(''),
       name: new FormControl('', Validators.required),
       userName: new FormControl('', Validators.required),
-      email: new FormControl('', Validators.required),
-      customerName: new FormControl(null, Validators.required),
+      email: new FormControl('', [Validators.required, Validators.email]),
+      customerName: new FormControl(null),
       roleName: new FormControl(null, Validators.required),
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', Validators.required],
-      userTypeId:('')
-    }, { validator: this.passwordMatchValidator });
+      phoneNo: new FormControl('', [this.numericValidator()]),
+      userTypeId: ('')
+    });
   }
 
   removeCustomerValidators() {
@@ -166,18 +167,16 @@ export class MyComponent implements OnInit {
       control.updateValueAndValidity();
     }
   }
-  passwordMatchValidator(form: FormGroup) {
-    const passwordControl = form.get('password');
-    const confirmPasswordControl = form.get('confirmPassword');
-    if (passwordControl == null || confirmPasswordControl == null) {
 
-    } else {
-      if (passwordControl.value !== confirmPasswordControl.value) {
-        confirmPasswordControl.setErrors({ passwordMismatch: true });
-      } else {
-        confirmPasswordControl.setErrors(null);
+  numericValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      const validPhoneNumber = /^[0-9]{10}$/;
+      if (value && !validPhoneNumber.test(value)) {
+        return { invalidPhoneNumber: true };
       }
-    }
+      return null;
+    };
   }
 
   ngOnInit(): void {
@@ -185,9 +184,34 @@ export class MyComponent implements OnInit {
     this.getAllTypeForUser();
 
     this.userSubscription = this.authService.user().subscribe(user => (this.loggedUser = user));
+    // console.log(this.loggedUser);
+    
+
     if (this.loggedUser.roles[0] === "ROLE_ADMIN") {
       this.removeCustomerValidators();
     }
+    if ('customerId' in this.loggedUser) {
+      this.admin = false;
+      this.allCustomerProduct.length = 0;
+      if (this.loggedUser.customerId != null && this.loggedUser.customerId != 0) {
+        this.userForm.patchValue({
+          customerName: this.loggedUser.customerId
+        })
+        this.customerServ.getAllCustomerProduct(0, 0, this.loggedUser.customerId).subscribe({
+          next: (resp) => {
+            for (let product of resp.data) {
+              this.allCustomerProduct.push(product);
+            }
+          }, error(err) {
+            console.log(err);
+          },
+        })
+      }
+
+    } else {
+      this.admin = true;
+    }
+
     this.getAllRoles();
     this.loadUsers();
 
@@ -230,13 +254,13 @@ export class MyComponent implements OnInit {
     this.removeScrollEventListener();
   };
 
-  allTypeForUser:any[]=[];
+  allTypeForUser: any[] = [];
 
-  getAllTypeForUser(){
-    this.userMgntServ.getAllTypesForUser('',0,10).subscribe({
-      next : (response) => {
-        if(response.status==Constant.SUCCESS){
-          this.allTypeForUser=response.data;
+  getAllTypeForUser() {
+    this.userMgntServ.getAllTypesForUser('', 0, 10).subscribe({
+      next: (response) => {
+        if (response.status == Constant.SUCCESS) {
+          this.allTypeForUser = response.data;
         }
       },
       error(err) {
@@ -315,67 +339,71 @@ export class MyComponent implements OnInit {
   selectedCustomerId: any;
   selectedProductIds: any[] = [];
 
-  arePasswordfieldsRequired: boolean = true;
+  // arePasswordfieldsRequired: boolean = true;
   foundCustomerProduct: boolean = false;
   fetchedCustomer: any;
   isRoleFieldValid: boolean = false;
   isRoleFieldValidForUpdate: boolean = true;
+  admin = false;
 
   createNewUser(formGroupDirective: FormGroupDirective) {
+
     if (this.userForm.valid) {
       let newUserObject: any = {
         'name': this.userForm.value.name,
         'userName': this.userForm.value.userName,
         'email': this.userForm.value.email,
-        'password': this.userForm.value.password,
+        'password': '',
+        'phoneNo': this.userForm.value.phoneNo,
         'roleId': this.userForm.value.roleName,
-        'customerId': this.userForm.value.customerName,
         'productIds': this.selectedProductIds,
-        'userTypeId':this.userForm.value.userTypeId
+        'userTypeId': this.userForm.value.userTypeId,
+        'mobNumber': this.userForm.value.phoneNo
+      }
+      if (this.admin) {
+        newUserObject.customerId = this.userForm.value.customerName;
+        this.createNewUserApi(newUserObject, formGroupDirective);
+
+      } else {
+        newUserObject.customerId = this.loggedUser.customerId;
+        this.createNewUserApi(newUserObject, formGroupDirective);
       }
 
-      let newUserObject2: any = {
-        'id': 0,
-        'sNo': 0,
-        'name': this.userForm.value.name,
-        'userName': this.userForm.value.userName,
-        'email': this.userForm.value.email,
-        'password': this.userForm.value.password,
-        'roleId': this.userForm.value.roleName,
-        'customerId': this.userForm.value.customerName,
-        'customerName': '',
-        'productIds': this.selectedProductIds,
-      }
-      this.userMgntServ.createNewUser(newUserObject).subscribe({
-        next: (resp) => {
-          if (resp.status === "success") {
-            this.toast.success(resp.message);
-            newUserObject2.id = resp.data.id;
-            newUserObject2.sNo = this.allUsers.length + 1;
-            this.allUsers.push(newUserObject2);
-            this.grid.dataSource.data = this.allUsers;
+      console.log(newUserObject);
 
-            this.selectedProductIds = [];
-            this.fetchedCustomer=null;
-            this.fetchedCustomer = [];
-            this.editorTitle = "ADD USER";
-            this.buttonText = "Save";
-            this.userForm.reset()
-            formGroupDirective.resetForm();
-          }
-          else if (resp.status === "error") {
-            this.toast.error(resp.message);
-          }
-        },
-        error: (err) => {
-          this.toast.error("SOMETHING_WENT_WRONG_TRY_AGAIN_LATER");
-          console.log(err);
-        },
-      })
     }
     else {
       this.toast.error("Invalid input");
     }
+  }
+
+  createNewUserApi(newUserObject: any, formGroupDirective: FormGroupDirective) {
+    this.userMgntServ.createNewUser(newUserObject).subscribe({
+      next: (resp) => {
+        if (resp.status === "success") {
+          this.toast.success(resp.message);
+          this.selectedProductIds = [];
+          this.fetchedCustomer = null;
+
+          this.allUsers = []
+          this.grid.dataSource.data = [];
+          this.userPageNo = 0;
+          this.loadUsers();
+
+          this.editorTitle = "ADD USER";
+          this.buttonText = "Save";
+        }
+        else if (resp.status === "error") {
+          this.toast.error(resp.message);
+        }
+        this.userForm.reset();
+        formGroupDirective.resetForm();
+      },
+      error: (err) => {
+        this.toast.error("SOMETHING_WENT_WRONG_TRY_AGAIN_LATER");
+        console.log(err);
+      },
+    })
   }
 
   onCustomerSelectionChange() {
@@ -402,8 +430,10 @@ export class MyComponent implements OnInit {
   }
 
   fcpDisable = false;
+
   editExistingUser(user: any) {
-    console.log(user);
+    // console.log(user);
+    this.userForm.get('userName')?.disable();
     if (this.loggedUser.id == user.id) {
       this.userForm.get('roleName')?.disable();
       this.userForm.get('customerName')?.disable();
@@ -414,7 +444,7 @@ export class MyComponent implements OnInit {
       this.fcpDisable = false;
     }
     // console.log(user);
-    this.arePasswordfieldsRequired = false;
+    // this.arePasswordfieldsRequired = false;
     this.editorTitle = "UPDATE USER";
     this.buttonText = "Update";
     this.userForm.patchValue({
@@ -422,10 +452,22 @@ export class MyComponent implements OnInit {
       'name': user.name,
       'userName': user.userName,
       'email': user.email,
-      'userTypeId':user.userTypeId,
+      'userTypeId': user.userTypeId,
       'password': '123456',
-      'confirmPassword': '123456'
+      'confirmPassword': '123456',
+      'phoneNo':user.mobNumber
     })
+    // if (user.mobNumber != null) {
+    //   this.userForm.get('phoneNo')?.enable();
+    //   this.userForm.patchValue({
+    //     'phoneNo': user.mobNumber
+    //   })
+    // } else {
+    //   this.userForm.patchValue({
+    //     'phoneNo': '000 000 0000'
+    //   })
+    //   this.userForm.get('phoneNo')?.disable();
+    // }
     this.isRoleFieldValid = true;
     this.selectedRole = user.roleId;
     this.currentUser = user;
@@ -442,6 +484,7 @@ export class MyComponent implements OnInit {
   }
 
   updateExistingUser(formGroupDirective: FormGroupDirective) {
+    this.userForm.get('userName')?.enable();
     if (this.userForm.valid) {
       let updateUserObject: any = {
         'id': this.currentUser.id,
@@ -451,7 +494,8 @@ export class MyComponent implements OnInit {
         "roleId": this.userForm.value.roleName,
         "customerId": this.selectedCustomerId,
         "productIds": this.selectedProductIds,
-        "userTypeId":this.userForm.value.userTypeId
+        "userTypeId": this.userForm.value.userTypeId,
+        'mobNumber': this.userForm.value.phoneNo
       }
 
       let updateUserObject2: any = {
@@ -463,9 +507,9 @@ export class MyComponent implements OnInit {
         "roleId": this.userForm.value.roleName,
         "customerId": this.selectedCustomerId,
         "productIds": this.selectedProductIds,
-        "userTypeId": this.userForm.value.userTypeId
+        "userTypeId": this.userForm.value.userTypeId,
+        'mobNumber': this.userForm.value.phoneNo
       }
-
       // console.log(updateUserObject);
 
 
@@ -484,10 +528,11 @@ export class MyComponent implements OnInit {
               upduser.customerId = updateUserObject2.customerId;
               upduser.productIds = updateUserObject2.productIds;
               upduser.userTypeId = updateUserObject2.userTypeId;
+              upduser.mobNumber = updateUserObject2.mobNumber;
               this.allUsers[index] = upduser;
               this.grid.dataSource.data = this.allUsers;
 
-              this.arePasswordfieldsRequired = true;
+              // this.arePasswordfieldsRequired = true;
               this.selectedRole = [];
               this.selectedCustomerId = null;
               this.selectedProductIds = [];
@@ -495,7 +540,7 @@ export class MyComponent implements OnInit {
               this.editorTitle = "ADD USER";
               this.buttonText = "Save";
               this.userForm.reset()
-              this.fetchedCustomer = [];
+              this.fetchedCustomer = null;
               formGroupDirective.resetForm();
 
             }
@@ -537,9 +582,9 @@ export class MyComponent implements OnInit {
               this.allUsers = this.allUsers.filter(item => item !== userObj);
               this.grid.dataSource.data = this.allUsers;
               // reseting form for add user
-              this.arePasswordfieldsRequired = true;
+              // this.arePasswordfieldsRequired = true;
               this.selectedRole = [];
-              this.fetchedCustomer = [];
+              this.fetchedCustomer = null;
               this.selectedProductIds = [];
               this.foundCustomerProduct = false;
               this.userForm.reset()
@@ -578,15 +623,17 @@ export class MyComponent implements OnInit {
   }
 
   addNew() {
-    this.arePasswordfieldsRequired = true;
+    // this.arePasswordfieldsRequired = true;
     this.selectedRole = [];
     this.selectedCustomerId = null;
     this.selectedProductIds = [];
-    this.fetchedCustomer = [];
+    this.fetchedCustomer = null;
     this.isRoleFieldValid = false;
     this.foundCustomerProduct = false;
     this.userForm.get('roleName')?.enable();
     this.userForm.get('customerName')?.enable();
+    // this.allCustomerProduct = [];
+    // this.selectedProductIds = [];
     this.fcpDisable = false;
     this.userForm.reset()
     this.editorTitle = "ADD USER";
@@ -639,9 +686,6 @@ export class MyComponent implements OnInit {
       }
     });
   }
-
-
-
 
 }
 

@@ -25,7 +25,6 @@ import { FakeLoginService } from './fake-login.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import {ConfigService} from "@core/ConfigService";
 import { WebSocketState } from '@stomp/stompjs';
-import { WebsocketServiceService } from './services/websocket-service.service';
 
 // Required for AOT compilation
 export function TranslateHttpLoaderFactory(http: HttpClient) {
@@ -34,7 +33,6 @@ export function TranslateHttpLoaderFactory(http: HttpClient) {
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    WebsocketServiceService,
     ConfirmationService, MessageService,
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),

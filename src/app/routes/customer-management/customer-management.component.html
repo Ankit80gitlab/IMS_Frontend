@@ -65,12 +65,26 @@
             </button>
           </div>
           <hr>
-          <div style="height: 230px;">
-            <mtx-grid class="grid-heightP" #grid2 [data]="allAddedProductDtos" [columns]="columns2"
-              [pageOnFront]="false" [showPaginator]="false">
-            </mtx-grid>
+
+          <!-- <div>
+            <div class="row">
+              <div class="col-md-1">
+                <div class="unsaved"></div>
+              </div>
+              <div class="col-md-10">
+                <small>unsaved product, please update!</small>
+              </div>
+            </div>
+          </div> -->
+
+          <div>
           </div>
 
+          <div style="height: 210px;">
+            <mtx-grid class="grid-heightP" #grid2 [data]="allAddedProductDtos" [columns]="columns2"
+              [pageOnFront]="false" [showPaginator]="false" [rowClassFormatter]="rowClassFormatter">
+            </mtx-grid>
+          </div>
 
         </form>
       </mat-card-content>

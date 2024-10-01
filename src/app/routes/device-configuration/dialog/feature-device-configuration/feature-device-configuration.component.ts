@@ -58,11 +58,12 @@ export class FeatureDeviceConfigurationComponent implements OnInit {
         this.deviceForm = this.fb.nonNullable.group({
             id: [null],
             name: [null, [Validators.required]],
-            uid: [null, [Validators.required]],
+            uid: [null,[Validators.required]],
             productId: [null, [Validators.required]],
             areaId: [null, [Validators.required]],
             lat: [null, [Validators.required]],
             lon: [null, [Validators.required]],
+            description:[null]
         });
         const formData: any = {};
         this.areas = data.areas;

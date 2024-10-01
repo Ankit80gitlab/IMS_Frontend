@@ -1,0 +1,13 @@
+::ng-deep .custom {
+   min-width: 300px;
+   max-height: 300px;
+}
+
+::ng-deep .list {
+   width: 370px;
+   /* min-width: 300px; */
+}
+
+.mat-menu-item {
+   font-size: 6px; /* Customize the size here */
+ }

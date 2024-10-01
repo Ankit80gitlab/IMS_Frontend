@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "types": ["node"],
     "baseUrl": "src",
     "downlevelIteration": true,
     "outDir": "./dist/out-tsc",

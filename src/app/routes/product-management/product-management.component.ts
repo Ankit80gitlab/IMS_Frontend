@@ -29,7 +29,6 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { Constant } from 'app/utility/constant';
 import { ProductIncidentTypeComponent } from '../product-incident-type/product-incident-type.component';
 import { DialogService } from 'app/utility/dialog.service';
-import { DialogRef } from '@angular/cdk/dialog';
 export interface ProductElement {
   productName: string;
   id: number;
@@ -66,7 +65,7 @@ export class ProductManagementComponent {
     productName: ['', [Validators.required]],
     productDescription: [''],
     productType: ['', [Validators.required]],
-    incidentTypeDtos: ['', [Validators.required]],
+    incidentTypeDtos: <any>[[]]
 
   });
   columns: MtxGridColumn[] = [
@@ -105,6 +104,15 @@ export class ProductManagementComponent {
         },
       ],
     },
+  ];
+
+  @ViewChild('grid2') grid2!: MtxGrid;
+
+  columns2: MtxGridColumn[] = [
+    {
+      header: 'Incident Type',
+      field: 'type',
+    }
   ];
 
   list: any[] = [];
@@ -157,13 +165,14 @@ export class ProductManagementComponent {
   };
   addNew(formGroupDirective: FormGroupDirective) {
     this.editorTitle = 'ADD PRODUCT';
-    this.incidentTitle="Add Incident Type";
+    this.incidentTitle = "Add Incident Type";
     this.addStatus = true;
+    this.allIncident = [];
     this.productForm.patchValue({
       productName: '',
       productType: '',
       productDescription: '',
-      incidentTypeDtos: ''
+      incidentTypeDtos: []
     });
     this.productForm.reset();
     formGroupDirective.resetForm();
@@ -171,17 +180,21 @@ export class ProductManagementComponent {
 
   dialogSubscription!: Subscription;
 
+  allIncident: any = [];
+
   addIncidentType() {
     this.incidentTpeComponent = this.dialog.open(ProductIncidentTypeComponent, {
       data: this.productForm.value.incidentTypeDtos, autoFocus: false, disableClose: true
     });
-    this.dialogSubscription = this.dialogService.dataObservable$.subscribe((result) => {
+    this.dialogSubscription = this.dialogService.dataObservable$.pipe(take(1)).subscribe((result) => {
       if (result) {
-        if (result.click === "save") {          
+        if (result.click === "save") {
           this.productForm.patchValue({
-            incidentTypeDtos:result.data.items
+            incidentTypeDtos: result.data.items
           })
           this.dialog.closeAll();
+          this.allIncident = this.productForm.value.incidentTypeDtos;
+
         }
       }
     })
@@ -192,7 +205,8 @@ export class ProductManagementComponent {
       this.toast.error('Name and Type cant be empty');
     }
     else {
-      
+      console.log(this.productForm.value);
+
       this.prodmgntServ.createProduct(this.productForm.value).subscribe({
         next: resp => {
           if (resp.status == 'error') {
@@ -206,11 +220,16 @@ export class ProductManagementComponent {
               incidentTypes: this.productForm.value.incidentTypeDtos,
               productDescription: this.productForm.value.productDescription
             }
-            this.list.push(newProduct);
-            this.grid.dataSource.data = this.list;
             this.productForm.reset();
             formGroupDirective.resetForm();
+            this.allIncident = [];
             this.toast.success(resp.message);
+            this.list = []
+            this.grid.dataSource.data = [];
+            this.pageNo = 0;
+            this.loadProducts();
+            // this.list.push(newProduct);
+            // this.grid.dataSource.data = this.list;
           }
           this.loading = false;
         },
@@ -223,13 +242,14 @@ export class ProductManagementComponent {
   }
 
   currentProduct: any;
-  incidentTitle="Add Incident Type";
+  incidentTitle = "Add Incident Type";
 
   editProduct(data: any) {
-    
+    // console.log(data);
+    this.allIncident = data.incidentTypes;
     this.currentProduct = data;
     this.editorTitle = 'EDIT PRODUCT';
-    this.incidentTitle="Edit Incident Type";
+    this.incidentTitle = "Edit Incident Type";
     this.addStatus = false;
     this.productForm.patchValue({
       id: data.id,
@@ -239,7 +259,7 @@ export class ProductManagementComponent {
       incidentTypeDtos: data.incidentTypes
     });
   }
-
+  
   updateProduct(formGroupDirective: FormGroupDirective) {
     if (this.productForm.invalid) {
       this.toast.error('Name and Type cant be empty');
@@ -248,12 +268,13 @@ export class ProductManagementComponent {
         next: resp => {
           if (resp.status == Constant.ERROR) {
             this.toast.error(resp.message);
+            this.addNew(formGroupDirective);
           } else {
             let index = this.list.findIndex(product => product.id === this.currentProduct.id);
             let updProduct = this.list[index];
             updProduct.sNo = this.currentProduct.sNo;
             updProduct.id = this.currentProduct.id,
-            updProduct.productName = this.productForm.value.productName;
+              updProduct.productName = this.productForm.value.productName;
             updProduct.productType = this.productForm.value.productType;
             updProduct.incidentTypes = this.productForm.value.incidentTypeDtos;
             updProduct.productDescription = this.productForm.value.productDescription;
@@ -274,12 +295,11 @@ export class ProductManagementComponent {
     }
   }
 
-
-
   Fetch() {
     this.loading = true;
     this.loadProducts(this.searchTerm, ++this.pageNo);
   }
+
   deleteProductApi(record: any) {
     let id = record.id;
     // this.loading = true;
@@ -293,6 +313,17 @@ export class ProductManagementComponent {
           });
           this.grid.dataSource.data = this.list;
           this.toast.success(resp.message);
+          this.editorTitle = 'ADD PRODUCT';
+          this.incidentTitle = "Add Incident Type";
+          this.addStatus = true;
+          this.allIncident = [];
+          this.productForm.patchValue({
+            productName: '',
+            productType: '',
+            productDescription: '',
+            incidentTypeDtos: []
+          });
+          this.productForm.reset();
         } else {
           this.toast.error(resp.message);
         }
@@ -321,6 +352,8 @@ export class ProductManagementComponent {
   loadProducts(term: string = '', pageNo: number = 0) {
     this.prodmgntServ.getAllProduct(term, pageNo, this.pageSize).subscribe({
       next: response => {
+        // console.log(response);
+        
         if (response.status == Constant.SUCCESS) {
           let i = 0;
           response.data.forEach((product: ProductElement) => {

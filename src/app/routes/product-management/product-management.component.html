@@ -56,6 +56,11 @@
 
           <br>
 
+          <div>
+            <mtx-grid class="grid-heightP" #grid2 [data]="allIncident" [columns]="columns2"
+              [pageOnFront]="false" [showPaginator]="false">
+            </mtx-grid>
+          </div>
 
           <div class="m-t-8 d-flex justify-content-end" *ngIf="addStatus">
             <button [disabled]="!productForm.valid" mat-raised-button color="primary"
@@ -72,7 +77,10 @@
             </div>
 
           </div>
+
         </form>
+
+        <!-- {{ productForm.value.incidentTypeDtos }} -->
       </mat-card-content>
     </mat-card>
   </div>

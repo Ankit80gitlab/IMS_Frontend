@@ -1,5 +1,5 @@
 .grid-heightP {
-  height: 230px;
+  height: 210px;
   overflow-y: scroll;
 }
 
@@ -8,4 +8,22 @@
   pointer-events: none;
   opacity: 0.6;
   background-color: #f0f0f0;
+}
+
+:host ::ng-deep .mtx-grid .success {
+  background-color:grey;
+}
+
+.unsaved{
+  border: 1px solid black;
+  width: 20px;
+  height: 20px;
+  background-color: rgb(179, 172, 172);
+}
+
+.saved{
+  border: 1px solid black;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(66,66,66,255)
 }

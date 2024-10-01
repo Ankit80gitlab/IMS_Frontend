@@ -1,7 +1,7 @@
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { PageHeaderComponent } from '@shared';
-import { MtxGrid, MtxGridColumn, MtxGridModule } from '@ng-matero/extensions/grid';
+import { MtxGrid, MtxGridColumn, MtxGridModule, MtxGridRowClassFormatter } from '@ng-matero/extensions/grid';
 import { Sort } from '@angular/material/sort';
 import {
   FormBuilder,
@@ -37,6 +37,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { DeleteDialogComponent } from 'app/dialog/delete-dialog/delete-dialog.component';
 import { CustomerUsersManagementComponent } from '../customer-users-management/customer-users-management.component';
 import { DialogService } from 'app/utility/dialog.service';
+import { AuthService } from '@core/authentication/auth.service';
 export interface CustomerElement {
   name: string;
   id: number;
@@ -65,6 +66,7 @@ export interface ProductBasic {
     CommonModule,
     MtxSelect,
     FormsModule,
+    MtxGrid,
   ],
   templateUrl: './customer-management.component.html',
   styleUrl: './customer-management.component.css',
@@ -76,6 +78,7 @@ export class CustomerManagementComponent implements OnInit {
   customerUserComponent!: MatDialogRef<CustomerUsersManagementComponent>;
   customerProductComponent!: MatDialogRef<CustomerUsersManagementComponent>;
 
+
   pageNo: number = 0;
   pageSize: number = 50;
   totalRecords: number = 0;
@@ -85,6 +88,8 @@ export class CustomerManagementComponent implements OnInit {
   @ViewChild('input') input!: ElementRef;
   @ViewChild('grid') grid!: MtxGrid;
   @ViewChild('grid2') grid2!: MtxGrid;
+
+
 
   private prodmgntServ = inject(ProductMangementService);
   products: any;
@@ -148,7 +153,9 @@ export class CustomerManagementComponent implements OnInit {
   productIds: number[] = [];
   customerSearchTermValue: string = '';
 
+
   ngOnInit(): void {
+
     this.loadCustomers();
     this.productSearchTerms
       .pipe(
@@ -226,13 +233,17 @@ export class CustomerManagementComponent implements OnInit {
   currentSelectedCustomer: any;
 
   edit(customer: any) {
+    // console.log(customer);
+
     this.currentSelectedCustomer = customer;
     let customerProductIds: any = [];
     let customerProducts = customer.products;
+    this.dynamicProductIds = [];
+    this.dynamicProductIds = customerProducts;
     for (let i of customerProducts) {
       let product = { id: i.id, productName: i.productName };
       customerProductIds.push(product);
-    }
+    } 
     this.allAddedProductDtos = customerProductIds;
     this.grid2.dataSource.data = this.allAddedProductDtos;
 
@@ -248,6 +259,7 @@ export class CustomerManagementComponent implements OnInit {
     this.editorTitle = 'Update Customer';
     this.buttonText = 'Update';
     this.columns2.find(col => { if (col.header === "Edit") { col.hide = false; } });
+
   }
 
   changeSort($event: Sort) { }
@@ -274,10 +286,29 @@ export class CustomerManagementComponent implements OnInit {
     formGroupDirective.resetForm();
     this.editorTitle = 'Add Customer';
     this.buttonText = 'Save';
+    this.dynamicProductIds = [];
     this.columns2.find(col => { if (col.header === "Edit") { col.hide = true } });
     this.allAddedProductDtos = [];
     this.dialogData = null;
   }
+
+  dynamicProductIds: any = [];
+
+  check(data: any, index: any): boolean {
+    let ids: any = [];
+    for (let i of this.dynamicProductIds) {
+      ids.push(i.id);
+    }
+    if (!ids.includes(data.id)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  rowClassFormatter: MtxGridRowClassFormatter = {
+    success: (data, index) => this.check(data, index),
+  };
 
   columns2: MtxGridColumn[] = [
     {
@@ -400,6 +431,8 @@ export class CustomerManagementComponent implements OnInit {
                             this.allAddedProductDtos.splice(index, 1);
                           }
                         });
+                        let index2 = this.dynamicProductIds.findIndex((item: any) => item.id == product.id);
+                        this.dynamicProductIds.splice(index2, 1);
                         this.grid2.dataSource.data = this.allAddedProductDtos;
                         this.customerForm.patchValue({
                           productIds: this.allAddedProductDtos
@@ -407,14 +440,14 @@ export class CustomerManagementComponent implements OnInit {
                         this.toast.success(response.message);
                       }
                       else {
-                        this.toast.error("Update Customer to edit newly added products");
+                        this.toast.error(response.message);
                       }
                     }, error(err) {
                       console.log(err);
                     },
                   })
                 } else {
-                  this.toast.success("Successfully Deleted");
+                  this.toast.success("Successfully Removed");
                   let index = this.allAddedProductDtos.findIndex(prod => prod.id === product.id);
                   this.allAddedProductDtos.splice(index, 1);
                   this.grid2.dataSource.data = this.allAddedProductDtos;
@@ -558,15 +591,19 @@ export class CustomerManagementComponent implements OnInit {
     let id = record.id;
     const formData = new FormData();
     formData.append('customerId', id);
-    this.list.forEach((item, index) => {
-      if (item.id === id) {
-        this.list.splice(index, 1);
-      }
-    });
-    this.grid.dataSource.data = this.list;
     this.custmgntServ.deleteCustomer(id).subscribe({
       next: resp => {
-        this.toast.success(resp.message);
+        if (resp.status === Constant.SUCCESS) {
+          this.toast.success(resp.message);
+          this.list.forEach((item, index) => {
+            if (item.id === id) {
+              this.list.splice(index, 1);
+            }
+          });
+          this.grid.dataSource.data = this.list;
+        } else {
+          this.toast.error(resp.message);
+        }
       },
       error: err => {
         console.log(err);

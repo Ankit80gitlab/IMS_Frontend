@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormControl, Validators, FormGroup, FormGroupDirective } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -39,18 +39,17 @@ import { ToastrService } from 'ngx-toastr';
 
 export class ProfileSettingComponent implements OnInit {
 
-
   private readonly toast = inject(ToastrService);
-  private webSocket = inject(WebSocket);
+  // private webSocket = inject(WebSocket);
   stock: any = {};
 
   constructor(private fb: FormBuilder,
     private userMgntServ: UserManagementService) {
-    this.webSocket = new WebSocket('ws://localhost:3000/stocks');
-    this.webSocket.onmessage = (event) => {
-      this.stock = JSON.parse(event.data)
-      console.log(this.stock);
-    };
+    // this.webSocket = new WebSocket('ws://localhost:3000/stocks');
+    // this.webSocket.onmessage = (event) => {
+    //   this.stock = JSON.parse(event.data)
+    //   console.log(this.stock);
+    // };
   }
 
   passwordResetFrom: any;
@@ -80,7 +79,7 @@ export class ProfileSettingComponent implements OnInit {
   onSubmit(formGroupDirective: FormGroupDirective) {
     if (this.passwordResetFrom.valid) {
       let currentPassword = this.passwordResetFrom.value.currentPassword;
-      let newPassword = this.passwordResetFrom.value.newPassword;
+      let newPassword = this.passwordResetFrom.value.password;      
       this.userMgntServ.changeUserPassword(currentPassword, newPassword).subscribe({
         next: (resp) => {
           console.log(resp);
@@ -94,7 +93,6 @@ export class ProfileSettingComponent implements OnInit {
           console.log(err);
         },
       })
-
     } else {
       this.toast.error("Invalid input")
     }

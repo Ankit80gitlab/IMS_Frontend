@@ -20,12 +20,12 @@
             }
         </mat-form-field>
         <mat-form-field class="m-r-8" appearance="outline">
-            <mat-label>User</mat-label>
+            <mat-label>Users</mat-label>
             <mtx-select [items]="user$ | async" bindLabel="userName" bindValue="id"
                         [virtualScroll] = "true" (scrollToEnd)="onScrollEnd()"
                         (search)="onSearch($event)" [loading]="loading"
-                        [searchable]="true"
-                        formControlName="userId" (change)="onSelectionChange($event);">
+                        [searchable]="true" multiple="true" [compareWith]="compareFn"
+                        formControlName="userIds" (change)="onSelectionChange($event);">
             </mtx-select>
             @if (areaForm.get('userId')?.invalid) {
             <mat-error>This field is required</mat-error>

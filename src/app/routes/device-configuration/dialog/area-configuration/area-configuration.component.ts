@@ -1,4 +1,4 @@
-import {Component, Inject, inject, OnInit} from '@angular/core';
+import { Component, Inject, inject, OnInit } from '@angular/core';
 import {
     MAT_DIALOG_DATA,
     MatDialogActions,
@@ -6,17 +6,17 @@ import {
     MatDialogContent,
     MatDialogRef, MatDialogTitle
 } from "@angular/material/dialog";
-import {MatDivider} from "@angular/material/divider";
-import {MatError, MatFormField, MatFormFieldModule, MatLabel} from "@angular/material/form-field";
-import {MatInput} from "@angular/material/input";
-import {MtxSelect} from "@ng-matero/extensions/select";
-import {FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
-import {MatButtonModule} from "@angular/material/button";
-import {MtxDialogData} from "@ng-matero/extensions/dialog";
-import {UserManagementService} from "../../../../services/user-management.service";
-import {Constant} from "../../../../utility/constant";
-import {ToastrService} from "ngx-toastr";
-import {AsyncPipe, NgIf} from "@angular/common";
+import { MatDivider } from "@angular/material/divider";
+import { MatError, MatFormField, MatFormFieldModule, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MtxSelect } from "@ng-matero/extensions/select";
+import { FormBuilder, FormGroup, FormGroupDirective, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
+import { MtxDialogData } from "@ng-matero/extensions/dialog";
+import { UserManagementService } from "../../../../services/user-management.service";
+import { Constant } from "../../../../utility/constant";
+import { ToastrService } from "ngx-toastr";
+import { AsyncPipe, NgIf } from "@angular/common";
 import {
     BehaviorSubject,
     catchError,
@@ -29,7 +29,7 @@ import {
     take,
     tap
 } from "rxjs";
-import {DialogService} from "../../../../utility/dialog.service";
+import { DialogService } from "../../../../utility/dialog.service";
 
 @Component({
     selector: 'app-area-configuration',
@@ -72,35 +72,65 @@ export class AreaConfigurationComponent implements OnInit {
     selectedCustomerId!: number | null;
     selectedUserName!: string | undefined;
     zones!: Object[] | undefined;
+    currentArea: any;
 
     constructor(public dialogRef: MatDialogRef<AreaConfigurationComponent>,
-                @Inject(MAT_DIALOG_DATA) private data: any,
-                private dialogService: DialogService) {
+        @Inject(MAT_DIALOG_DATA) private data: any,
+        private dialogService: DialogService) {
         this.areaForm = this.fb.nonNullable.group({
             id: [null],
             name: [null, [Validators.required]],
-            userId: [null, [Validators.required]],
+            userIds: [null, [Validators.required]],
+            customerId: [null, [Validators.required]],
             zoneId: [null, [Validators.required]],
         });
-        const formData: any = {};
-        this.selectedUserId = data.userId;
-        this.selectedCustomerId = data.customerId;
-        this.selectedUserName = data.userName;
-        this.zones = data.zones;
-        formData.zoneId = data.zoneId;
-        if (data.id) {
-            this.saveBtnText = "Update";
-            formData.id = data.id;
-            formData.name = data.name;
-            formData.userId = this.selectedUserId;
-            this.userSubject.next([
-                {id: this.selectedUserId, userName: this.selectedUserName}
-            ]);
-        }
-        this.areaForm.patchValue(formData);
     };
 
+    compareFn(user1: any, user2: any) {
+        return user1 && user2 ? user1.id === user2.id : user1 === user2;
+    }
+
     ngOnInit(): void {
+
+
+        // const formData: any = {};
+        // this.selectedUserId = data.userId;
+        // this.selectedCustomerId = data.customerId;
+        // this.selectedUserName = data.userName;
+        // this.zones = data.zones;
+        // formData.zoneId = data.zoneId;
+        // if (data.id) {
+        //     this.saveBtnText = "Update";
+        //     formData.id = data.id;
+        //     formData.name = data.name;
+        //     formData.userId = this.selectedUserId;
+        //     this.userSubject.next([
+        //         { id: this.selectedUserId, userName: this.selectedUserName }
+        //     ]);
+        // }
+        // this.areaForm.patchValue(formData);
+
+        this.currentArea = this.data;
+        // console.log(this.data);
+
+        if (this.currentArea.hasOwnProperty('id')) {
+            this.saveBtnText = "Update";
+            this.zones = this.currentArea.zones;
+            this.areaForm.patchValue({
+                id: this.currentArea.id,
+                name: this.currentArea.name,
+                userIds: this.currentArea.users,
+                zoneId: this.currentArea.zones[0].id,
+                customerId: this.currentArea.customerId
+            });
+        } else {
+            this.zones = this.currentArea.zones;
+            this.areaForm.patchValue({
+                zoneId: this.currentArea.zones[0].id,
+                customerId: this.currentArea.customerId
+            });
+        }
+
         this.loadUsers().pipe(
             take(1),
         ).subscribe(initialItems => {
@@ -122,7 +152,7 @@ export class AreaConfigurationComponent implements OnInit {
     }
 
     loadUsers(term: string = "", pageNo: number = 0): Observable<Object[]> {
-        return this.userManagementService.getAllUsersBasicDetails(term, pageNo, Constant.DEFAULT_PAGE_SIZE).pipe(
+        return this.userManagementService.getAllCustomerUsersBasicDetails(this.currentArea.customerId, '', 0, Constant.DEFAULT_PAGE_SIZE).pipe(
             switchMap((response: any) => {
                 let items: any = [];
                 if (response.status == Constant.SUCCESS) {
@@ -155,16 +185,33 @@ export class AreaConfigurationComponent implements OnInit {
     };
 
     onSaveClick(): void {
+        // console.log(this.areaForm.value);
+
         if (this.areaForm.valid) {
             const data = this.areaForm.value;
-            data.userName = this.selectedUserName;
-            data.customerId = this.selectedCustomerId;
-            this.dialogService.submit({click: "save", data: data});
+            // data.userName = this.selectedUserName;
+            // data.customerId = this.selectedCustomerId;
+            let users: any = [];
+            this.areaForm.value.userIds.forEach((selectedUserIds: any) => {
+                this.user$.subscribe((allUsers: any) => {
+                    allUsers.forEach((obj: any) => {
+                        if (selectedUserIds == obj.id) {
+                            let u = { id: obj.id, userName: obj.userName }
+                            users.push(u);
+                        }
+                    })
+                })
+            });
+            data.users = users;
+            this.selectedUserName
+            // console.log(data);
+            this.dialogService.submit({ click: "save", data: data });
+
         }
     };
 
     onDeleteClick(): void {
-        this.dialogService.submit({click: "delete", data: this.areaForm.value});
+        this.dialogService.submit({ click: "delete", data: this.areaForm.value });
     };
 
     onScrollEnd(): void {
@@ -185,7 +232,10 @@ export class AreaConfigurationComponent implements OnInit {
 
     onSelectionChange(event: any): void {
         if (event) {
+            console.log(event);
             this.selectedUserName = event.userName;
+            console.log(this.selectedUserName);
+            
         }
     };
 

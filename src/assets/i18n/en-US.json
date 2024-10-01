@@ -67,6 +67,14 @@
     "Overview":"Overview",
     "Overview.Dashboard":"Dashboard",
     "Overview.MapView":"MapView",
+    
+    "Admin_Features":"Admin Features",
+    "Admin_Features.User_Management":"User Management",
+    "Admin_Features.Role_Management":"Role Management",
+    "Admin_Features.Product_Management":"Product Management",
+    "Admin_Features.Device_Configuration":"Device Management",
+    "Admin_Features.Customer_Management":"Customer Management",
+
     "Product_Management":"Product Management",
     "Device_Configuration":"Device Configuration",
     "Customer_Management":"Customer Management",

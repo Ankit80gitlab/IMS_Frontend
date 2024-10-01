@@ -4,9 +4,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { debounceTime, tap } from 'rxjs';
+import { debounceTime, Subscription, tap } from 'rxjs';
 
 import { AuthService, SettingsService, User } from '@core';
+import { WebsocketService } from 'app/services/websocket.service';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { LogoutDialogComponent } from 'app/dialog/logout-dialog/logout-dialog.component';
+import { DialogService } from 'app/utility/dialog.service';
 
 @Component({
   selector: 'app-user',
@@ -21,14 +25,6 @@ import { AuthService, SettingsService, User } from '@core';
         <mat-icon>account_circle</mat-icon>
         <span>{{ 'profile' | translate }}</span>
       </button>
-      <button routerLink="/profile/settings" mat-menu-item>
-        <mat-icon>edit</mat-icon>
-        <span>{{ 'edit_profile' | translate }}</span>
-      </button>
-      <button mat-menu-item (click)="restore()">
-        <mat-icon>restore</mat-icon>
-        <span>{{ 'restore_defaults' | translate }}</span>
-      </button>
       <button mat-menu-item (click)="logout()">
         <mat-icon>exit_to_app</mat-icon>
         <span>{{ 'logout' | translate }}</span>
@@ -36,8 +32,7 @@ import { AuthService, SettingsService, User } from '@core';
     </mat-menu>
   `,
   styles: [
-    `
-      .avatar {
+    `.avatar {
         width: 24px;
         height: 24px;
       }
@@ -46,11 +41,27 @@ import { AuthService, SettingsService, User } from '@core';
   standalone: true,
   imports: [RouterLink, MatButtonModule, MatIconModule, MatMenuModule, TranslateModule],
 })
+
+// <button routerLink="/profile/settings" mat-menu-item>
+//         <mat-icon>edit</mat-icon>
+//         <span>{{ 'edit_profile' | translate }}</span>
+//       </button>
+//       <button mat-menu-item (click)="restore()">
+//         <mat-icon>restore</mat-icon>
+//         <span>{{ 'restore_defaults' | translate }}</span>
+//       </button>
+
 export class UserComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly settings = inject(SettingsService);
+  private readonly webSocketService = inject(WebsocketService);
+
+
+  constructor(public dialog: MatDialog, private dialogService: DialogService) {
+
+  }
 
   user!: User;
 
@@ -64,10 +75,39 @@ export class UserComponent implements OnInit {
       .subscribe(() => this.cdr.detectChanges());
   }
 
+  // logout() {
+  //   this.auth.logout().subscribe(() => {
+  //     this.router.navigateByUrl('/login');
+  //   });
+  //   this.webSocketService.close();
+  // }
+
+  logOutDialog!: MatDialogRef<LogoutDialogComponent>;
+  dialogSubscription!: Subscription;
+
   logout() {
-    this.auth.logout().subscribe(() => {
-      this.router.navigateByUrl('/login');
+    this.logOutDialog = this.dialog.open(LogoutDialogComponent, {
+      width: '300px',
+      autoFocus: false,
+      data: '',
+      disableClose: true
     });
+    this.dialogSubscription = this.dialogService.dataObservable$.subscribe((result) => {
+      // console.log(result);
+      if (result.click === 'logout') {
+        this.auth.logout().subscribe(() => {
+          this.webSocketService.close();
+          this.logOutDialog.close();
+        });
+        this.router.navigateByUrl('/login');
+      }
+    })
+  }
+
+  ngOnDestroy() {
+    if (this.dialogSubscription) {
+      this.dialogSubscription.unsubscribe();
+    }
   }
 
   restore() {

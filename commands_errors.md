@@ -44,3 +44,20 @@ npm i --save-dev @types/leaflet
 npm i jsts
 npm i @types/jsts
 
+npm install quill ngx-quill     
+npm i ngx-quill@25.3.2
+
+npm install --save quill
+npm install --save ngx-quill
+
+
+npm install ngx-file-viewer
+npm i ngx-doc-viewer
+
+
+npm install node-polyfill-webpack-plugin
+
+npm install --save @types/echarts
+npm i ngx-echarts
+npm install @types/d3
+npm install @types/d3 --save-dev

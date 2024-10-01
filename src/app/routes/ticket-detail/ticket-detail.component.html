@@ -1,43 +1,484 @@
 <page-header class="bg-green-600"></page-header>
-<div class="row" *ngIf="!addStatus">
+
+<div class="row" *ngIf="!addStatus" id="contentToConvert">
+
   <div class="col-md-12">
     <mat-card>
       <div style="padding: 2%;">
         <mat-card>
           <mat-card-header style="background: #0970af;">
-            <mat-card-title>Feature #1124 [Open]</mat-card-title>
-
+            <mat-card-title>Feature #{{currentTicket?.id}} [Open]</mat-card-title>
           </mat-card-header>
-          <!-- <div style="margin-left: 2%;">Added by Sj</div> -->
-          <mat-grid-list [cols]="breakpoint" rowHeight="2:0.5" (window:resize)="onResize($event)">
-            <mat-grid-tile>
-              <div><b>Status:</b></div>
-              <div class="text-tile">Pending</div>
-            </mat-grid-tile>
-            <mat-grid-tile>
-              <div><b>Priority:</b></div>
-              <div class="text-tile">Normal</div>
-            </mat-grid-tile>
-            <mat-grid-tile>
-              <div><b>Assignee:</b></div>
-              <div class="text-tile">Shiv</div>
-            </mat-grid-tile>
-            <mat-grid-tile>
-              <div><b>Type:</b></div>
-              <div class="text-tile">Shiv</div>
-            </mat-grid-tile>
-          </mat-grid-list>
-          <div class="editor editor-color">
-            <ngx-editor-menu [editor]="editor" [toolbar]="toolbar">
-            </ngx-editor-menu>
-            <ngx-editor [editor]="editor">
-            </ngx-editor>
-          </div>
+
+          <mat-card-content style="padding: 4%;">
+            <div *ngIf="!isEditing">
+              <div class="viewBox">
+
+                <div class="row">
+                  <div class="col-sm-2">
+                    <img src="./assets/ticket/avatar.png" width="70px" style="border-radius: 7px;">
+                  </div>
+                  <div class="col-sm-8">
+                    <div class="row">
+                      <div class="col-sm-12">
+                        <p style="font-size:large;">{{currentTicket?.subject | capitalizeEveryFirst}}</p>
+                      </div>
+                      <div class="col-sm-12">
+                        <p class="ticketInfo">
+                          Added by <a class="link">{{currentTicket?.createdBy.userName |capitalizeEveryFirst }}</a>
+                          about <a class="link" [mtxTooltip]="createdTime">
+                            {{timeAgo(currentTicket?.createdTime)}}</a>.
+
+                          @if(showLastUpdate){
+                          Last updated by
+                          <a class="link">
+                            {{currentTicket?.updatedBy.userName |capitalizeEveryFirst }}
+                          </a>
+                          about <a class="link" [mtxTooltip]="updatedTime">
+                            {{timeAgo(currentTicket?.updatedBy.updatedTime)}}
+                          </a>
+                          }
+                        </p>
+
+                        <ng-template #createdTime>
+                          <div>{{currentTicket?.createdTime | date: 'dd/MM/yyyy HH:mm a'}}</div>
+                        </ng-template>
+
+                        <ng-template #updatedTime>
+                          <div>{{currentTicket?.updatedBy.updatedTime | date: 'dd/MM/yyyy HH:mm a'}}</div>
+                        </ng-template>
+
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-sm-2" style="display: flex; justify-content: flex-end;">
+                    <button mat-raised-button class="menuTrigger" (click)="editTicket()">Edit
+                      <mat-icon style="color: #26a331;">edit</mat-icon>
+                    </button>
+
+                  </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                  <div class="col-sm-2 head">Status</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">{{currentTicket?.status | capitalizeEveryFirst}}</div>
+                  <div class="col-sm-2 head">Start date</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">{{currentTicket?.createdTime | date: 'dd/MM/yyyy'}}</div>
+                  <div class="col-sm-2 head">Priority</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">{{currentTicket?.priority | capitalizeEveryFirst}}</div>
+                  <div class="col-sm-2 head">Issue</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">{{currentTicket?.issueRelated | capitalizeEveryFirst}}</div>
+                  <div class="col-sm-2 head">Assignee</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">
+                    <a class="link">{{currentTicket?.assignedTo.userName | capitalizeEveryFirst}}</a>
+                  </div>
+                  <div class="col-sm-2 head">Type</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-3 value">{{currentTicket?.type | capitalizeEveryFirst}}</div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                  <div class="col-sm-12 head">Description</div>
+                  <br>
+
+                  <div class="col-sm-12">
+                    @if(currentTicket?.description){
+                    <quill-editor disabled class="view-content-editor" [modules]="quillConfig2"
+                      [(ngModel)]="currentTicket.description" style="width: 100%;">
+                    </quill-editor>}
+                  </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                  <div class="col-sm-12 head">Details</div>
+                  <br>
+                  <div class="col-sm-2 head">Customer Name</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-9 value"><a class="link">{{currentTicket?.customer.name |
+                      capitalizeEveryFirst}}</a></div>
+
+                  <div class="col-sm-2 head">Product Name</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-9 value"><a class="link">{{currentTicket?.product.productName |
+                      capitalizeEveryFirst}}</a></div>
+
+                  <div class="col-sm-2 head">Device Name</div>
+                  <div class="col-sm-1 head">:</div>
+                  <div class="col-sm-9 value"><a class="link">{{currentTicket?.device.name | capitalizeEveryFirst}}</a>
+                  </div>
+
+                </div>
+
+                <hr>
+
+                <div class="row">
+                  <div class="col-sm-12 head">Files</div>
+                  <br>
+
+                  @for (file of currentTicket?.files; track file;let i = $index;) {
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <small class="fileAddedBy">
+                        Added by {{file.uploadedBy.userName}} on {{file.uploadedTime | date: 'dd/MM/YYYY HH:mm
+                        a'}}</small>
+                    </div>
+
+                    <div class="col-sm-12">
+                      <div class="icon-text-container">
+                        <span>
+                          <small class="value">{{i+1}}.</small>
+                          &nbsp;
+                          <a class="link value" (click)="viewFile(file)">{{file.fileName}}</a>
+                        </span>
+                        <mat-icon mtxTooltip="download file" style="margin-left: 10px; cursor: pointer;"
+                          (click)="downloadTicketFile(file.fileName,file.id)">download</mat-icon>
+                      </div>
+
+                      <div>
+
+                      </div>
+
+                    </div>
+
+                    @if(file.description!=""){
+                    <div class="col-sm-12">
+                      <small class="fileDesc">Description : {{file.description}}</small>
+                    </div>
+                    }
+                  </div>
+                  }
+                </div>
+
+                <hr>
+
+                <div class="row">
+                  <div class="col-sm-10 head">Sub Tickets</div>
+                  <div class="col-sm-2"><a
+                      style="display: flex; justify-content: flex-end; font-size: 12px; text-decoration: none; margin: 5px;"
+                      class="link" (click)="addSubTask()">add new +</a>
+                  </div>
+
+                  @if(showSubTickets){
+
+                  <table mat-table [dataSource]="currentTicket?.subTicket" class="mat-elevation-z8">
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="id">
+                        <th class="head" mat-header-cell *matHeaderCellDef> ID </th>
+                        <td class="subTicketInfo" mat-cell *matCellDef="let element"> {{element.id}} </td>
+                      </ng-container>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="subject">
+                        <th class="head" mat-header-cell *matHeaderCellDef> Subject </th>
+                        <td class="subTicketInfo" mat-cell *matCellDef="let element"> {{element.subject}} </td>
+                      </ng-container>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="status">
+                        <th class="head" mat-header-cell *matHeaderCellDef> Status </th>
+                        <td class="subTicketInfo" mat-cell *matCellDef="let element"> {{element.status}} </td>
+                      </ng-container>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="createdTime">
+                        <th class="head" mat-header-cell *matHeaderCellDef> Created Date </th>
+                        <td class="subTicketInfo" mat-cell *matCellDef="let element">{{element.createdTime | date:
+                          'dd/MM/YYYY'}}</td>
+                      </ng-container>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="createdBy">
+                        <th class="head" mat-header-cell *matHeaderCellDef> Created By </th>
+                        <td class="subTicketInfo" mat-cell *matCellDef="let element"> {{element.createdBy.userName}}
+                        </td>
+                      </ng-container>
+                    </div>
+
+                    <div class="col-sm-2">
+                      <ng-container matColumnDef="edit">
+                        <th class="head" mat-header-cell *matHeaderCellDef> Edit </th>
+                        <td class="subTicketInfo" style="cursor: pointer;" mat-cell *matCellDef="let element">
+                          <mat-icon (click)="openSubTicket(element)">edit</mat-icon>
+                        </td>
+                      </ng-container>
+                    </div>
+
+                    <tr class="head" mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  </table>
+
+                  }
+
+                </div>
+
+                <hr>
+
+                <div class="row">
+                  <div class="col-sm-12 head">Related Issues</div>
+                </div>
+
+                <hr>
+
+                <div style="border: 1px solid gray; padding: 0px; border-radius: 5px;">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" animationDuration="0ms">
+                        <mat-tab class="check" label="Comments">
+                          <div>
+                            @for (comment of currentTicket?.comments; track comment) {
+                            <p class="commentedBy">
+                              Added by
+                              {{comment.createdBy.userName}} about &nbsp; <a class="link"
+                                [mtxTooltip]="commentCreatedTime">
+                                {{timeAgo(comment.createdTime)}}</a>
+                            </p>
+
+                            <ng-template #commentCreatedTime>
+                              <div>{{comment.createdTime | date: 'dd/MM/YYYY HH:mm a'}}</div>
+                            </ng-template>
+
+                            <quill-editor disabled class="view-content-editor-c" [modules]="quillConfig2"
+                              [(ngModel)]="comment.comment" style="width: 100%; height: auto;">
+                            </quill-editor>
+                            <hr>
+                            }
+                          </div>
+
+                        </mat-tab>
+
+                        <mat-tab label="History">
+                          <div>
+                            @for (history of currentTicketHistoryData; track history) {
+                            <p class="commentedBy">
+                              updated by
+                              {{history.updatedBy.userName}} about &nbsp; <a class="link"
+                                [mtxTooltip]="historyCreatedTime">
+                                {{timeAgo(history.updatedTime)}}</a>
+                            </p>
+
+                            <ng-template #historyCreatedTime>
+                              <div>{{history.updatedTime | date: 'dd/MM/YYYY HH:mm a'}}</div>
+                            </ng-template>
+
+                            @for(change of history.changes; track change){
+                            <p class="history">{{change.changeIn | capitalizeFirst}} changed from {{change.changeFrom |
+                              capitalizeFirst}} -> {{change.changeTo | capitalizeFirst}}</p>
+                            }
+
+                            <hr>
+                            }
+                          </div>
+                        </mat-tab>
+
+                      </mat-tab-group>
+
+                      <ng-template mat-tab-label>
+                        <mat-icon class="example-tab-icon">thumb_up</mat-icon>
+                        First
+                      </ng-template>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ------------------------------- add ticket code -------------------------------------------- -->
+
+            <div *ngIf="isEditing" #scrollTarget>
+
+              <form [formGroup]="ticketForm" class="form-field-full" #formGroupDirective="ngForm">
+
+                <div style="color: rgb(190, 184, 184);">Change properties</div>
+                <div style="border: 1px solid gray; padding: 20px; border-radius: 5px;">
+                  <br>
+                  @if(false){
+                  <div class="row">
+                    <div class="col-sm-2">
+                      <label class="label">Issue Related</label>
+                    </div>
+                    <div class="col-sm-10">
+                      <mat-form-field class="m-r-8 mx-width" appearance="outline">
+                        <mat-select required formControlName="issueRelated" required>
+                          <mat-option value="hardware">Hardware</mat-option>
+                          <mat-option value="software">Software</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  }
+
+                  <div class="row">
+                    <div class="col-sm-2">
+                      <label class="label">Subject</label>
+                    </div>
+                    <div class="col-sm-10">
+                      <mat-form-field appearance="outline">
+                        <input matInput formControlName="subject" required>
+                        @if (ticketForm.get('subject')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-sm-2">
+                      <label class="label">Priority</label>
+                    </div>
+                    <div class="col-sm-10">
+                      <mat-form-field class="m-r-8 mx-width" appearance="outline">
+                        <mat-select required formControlName="priority">
+                          <mat-option value="high">High</mat-option>
+                          <mat-option value="low">Low</mat-option>
+                          <mat-option value="medium">Medium</mat-option>
+                          <mat-option value="immediate">Immediate</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-sm-2">
+                      <label class="label">Status</label>
+                    </div>
+                    <div class="col-sm-10">
+                      <mat-form-field class="m-r-8 mx-width" appearance="outline">
+                        <mat-select required formControlName="status">
+                          @if(!currentTicket?.status==="inProgress" && currentTicket?.Status==="resolved"){
+                          <mat-option value="new">New</mat-option>
+                          }
+                          @if(currentTicket?.status==="new"){
+                          <mat-option value="new">New</mat-option>
+                          }
+                          <mat-option value="inProgress">In Progress</mat-option>
+                          <mat-option value="resolved">Resolved</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-sm-2">
+                      <label class="label">Assignee</label>
+                    </div>
+                    <div class="col-sm-10">
+                      <mat-form-field appearance="outline" class="mx-width">
+                        <mtx-select [items]="user$ | async" bindLabel="userName" bindValue="id"
+                          formControlName="assignee">
+                        </mtx-select>
+                        @if (ticketForm.get('assignee')?.invalid) {
+                        <mat-error>This field is required</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+
+                <br>
+
+                <div style="color: rgb(190, 184, 184);">Comments</div>
+                <div style="border: 1px solid gray; padding: 15px; border-radius: 5px;">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <quill-editor class="content-editor-c" [modules]="quillConfig" formControlName="comment"
+                        placeholder="" style="width: 100%; height: 80px;">
+                      </quill-editor>
+                    </div>
+                  </div>
+                </div>
+
+                <br>
+
+                <div style="color: rgb(190, 184, 184);">Files</div>
+                <div style="border: 1px solid gray; padding: 15px; border-radius: 5px;">
+
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <button mat-raised-button color="success" (click)="onClick($event)">
+                        <mat-icon>attachment</mat-icon>Attachments
+                      </button>
+                      <input #fileUpload type="file" class="input_fileupload--hidden" (input)="onInput($event)"
+                        (change)="getFileDetails($event)" [accept]="accept" multiple>
+                    </div>
+                  </div>
+
+                  <br>
+
+                  <div class="row">
+                    <div formArrayName="files" *ngFor="let item of ticketForm.get('files')?.controls; let i = index;">
+                      <div [formGroupName]="i">
+                        <div class="row">
+                          <div class="col-sm-6">
+                            {{i+1}}.
+                            <input matInput placeholder="file" formControlName="fileName" readonly style="width: 90%;">
+                          </div>
+                          <div class="col-sm-6">
+                            <input matInput placeholder="Optional description" formControlName="description"
+                              style="width: 90%;">
+                            <mat-icon style="cursor: pointer;" (click)="onFileRemove(i)">delete</mat-icon>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- <div class="row">
+                    <div class="col-sm-12">
+                      <button mat-raised-button color="success">
+                        <mat-icon>attachment</mat-icon>Attachments
+                      </button>
+                    </div>
+                  </div> -->
+                </div>
+
+                <br>
+
+                <div style="display: flex; justify-content: flex-end;">
+                  <button mat-raised-button class="menuTrigger" (click)="cancelTicket()">Cancel
+                    <mat-icon style="color: #26a331;">cancel</mat-icon>
+                  </button>
+                  &nbsp;
+                  <button mat-raised-button class="menuTrigger" [disabled]="ticketForm.get('issueRelated')?.invalid ||
+                  ticketForm.get('subject')?.invalid ||
+                  ticketForm.get('priority')?.invalid ||
+                  ticketForm.get('status')?.invalid ||
+                  ticketForm.get('assignee')?.invalid" (click)="updateTicket()">Submit
+                    <mat-icon style="color: #26a331;">done</mat-icon>
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </mat-card-content>
+
+          <button mat-raised-button class="menuTrigger" (click)="downloadPDF()">Download as pdf
+            <mat-icon style="color: #26a331;">download</mat-icon>
+          </button>
+
+
         </mat-card>
       </div>
     </mat-card>
   </div>
 </div>
+
 
 
 <div *ngIf="addStatus">
@@ -50,6 +491,24 @@
     <mat-card-content style="padding: 5%;">
       <form [formGroup]="ticketForm" class="form-field-full" #formGroupDirective="ngForm">
 
+        <div *ngIf="addSubTicketStatus" class="row">
+          <div class="col-sm-12" style="margin-bottom: 10px;">
+            <a class="link">Parent Ticket Id [#{{subTicketId}}]</a>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+          </div>
+          <div class="col-md-6" style="display: flex; justify-content: flex-end;">
+            <button mat-raised-button class="menuTrigger" (click)="cancelCreateTicket()">
+              Cancel <mat-icon style="color: #e22d2d;">cancel</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <br>
+
         <div class="row">
           <div class="col-sm-12">
             <mat-form-field appearance="outline">
@@ -61,44 +520,20 @@
             </mat-form-field>
           </div>
 
-          <div class="col-sm-6">
-            <mat-form-field class="m-r-8" appearance="outline" style="max-width:300px !important">
-              <mat-label>Type</mat-label>
-              <mat-select required formControlName="type" required>
-                <mat-option value="bug">Bug</mat-option>
-                <mat-option value="support">Support</mat-option>
-                <mat-option value="feature">Feature</mat-option>
-              </mat-select>
-              @if (ticketForm.get('type')?.invalid) {
-              <mat-error>This field is required</mat-error>
-              }
-            </mat-form-field>
-          </div>
-
           <div class="col-sm-12">
-            <mat-label style="margin-left: 5px;">Description</mat-label>
-            <div class="editor editor-color" style="margin: 5px;">
-              <ngx-editor-menu [editor]="editor" [toolbar]="toolbar">
-              </ngx-editor-menu>
-              <ngx-editor [editor]="editor" formControlName="description">
-              </ngx-editor>
-            </div>
+            <p>Description</p>
+            <quill-editor class="content-editor" [modules]="quillConfig" formControlName="description" placeholder=""
+              style="width: 100%; height: 80px;">
+            </quill-editor>
           </div>
 
-          <div class="col-sm-6">
-            <mat-form-field class="m-r-8 mx-width" appearance="outline">
-              <mat-label>Issue Related</mat-label>
-              <mat-select required formControlName="issueRelated" required>
-                <mat-option value="hardware">Hardware</mat-option>
-                <mat-option value="software">Software</mat-option>
-              </mat-select>
-              @if (ticketForm.get('issueRelated')?.invalid) {
-              <mat-error>This field is required</mat-error>
-              }
-            </mat-form-field>
-          </div>
+        </div>
 
-          <div class="col-sm-6">
+        <br>
+
+        <div class="row">
+
+          <div class="col-sm-4">
             <mat-form-field class="m-r-8 mx-width" appearance="outline">
               <mat-label>Priority</mat-label>
               <mat-select required formControlName="priority">
@@ -113,41 +548,102 @@
             </mat-form-field>
           </div>
 
-          <div class="col-sm-6">
+          <div class="col-sm-4">
+            <mat-form-field class="m-r-8 mx-width" appearance="outline">
+              <mat-label>Status</mat-label>
+              <mat-select required formControlName="status">
+                <mat-option value="new">New</mat-option>
+                <mat-option value="inProgress">In Progress</mat-option>
+                <mat-option value="resolved">Resolved</mat-option>
+              </mat-select>
+              @if (ticketForm.get('status')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+
+          <div *ngIf="admin" class="col-sm-4">
             <mat-form-field appearance="outline" class="mx-width">
               <mat-label>Customer</mat-label>
               <mtx-select [items]="customer$ | async" bindLabel="name" bindValue="id" [virtualScroll]="true"
-                (scrollToEnd)="onScrollEndCust()" (search)="onSearchCust($event)" [loading]="loading"
-                [searchable]="true" formControlName="customerId" (change)="onSelectionChangeCust($event);">
+                (scrollToEnd)="onCustomerScrollEnd()" (search)="onSearchCustomer($event)" [loading]="loading"
+                [searchable]="true" formControlName="customerId" (change)="onCustomerSelectionChange($event);">
               </mtx-select>
-
             </mat-form-field>
           </div>
 
-          <div class="col-sm-6">
-            <mat-form-field appearance="outline"  class="mx-width">
+          <div class="col-sm-4">
+            <mat-form-field appearance="outline" class="mx-width">
               <mat-label>Assignee</mat-label>
               <mtx-select [items]="user$ | async" bindLabel="userName" bindValue="id" [virtualScroll]="true"
-                (scrollToEnd)="onScrollEnd()" (search)="onSearch($event)" [loading]="loading" [searchable]="true"
-                formControlName="assignee" (change)="onAssigneeChange($event,index);">
+                (scrollToEnd)="onAssigneeScrollEnd()" (search)="onAssigneeSearch($event)" [loading]="loading"
+                [searchable]="true" formControlName="assignee" (change)="onAssigneeSelectionChange($event,index);">
               </mtx-select>
-              <!-- @if (ticketForm.get('assignee')?.invalid) {
-        <mat-error>This field is required</mat-error>
-        } -->
+              @if (ticketForm.get('assignee')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
             </mat-form-field>
           </div>
 
-          <div class="col-sm-6">
+          <div class="col-sm-4">
             <mat-form-field class="m-r-8 mx-width" appearance="outline">
               <mat-label>Products</mat-label>
               <mtx-select [items]="product$ | async" bindLabel="name" bindValue="id" [virtualScroll]="true"
-                (scrollToEnd)="onScrollEnd1()" (search)="onSearch1($event)" [loading]="loading" [searchable]="true"
-                formControlName="productId" (change)="onProductChange($event)">
+                (scrollToEnd)="onProductScrollEnd()" (search)="onProductSearch($event)" [loading]="loading"
+                [searchable]="true" formControlName="productId" (change)="onProductChange($event)">
               </mtx-select>
+              @if (ticketForm.get('productId')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
             </mat-form-field>
           </div>
 
-          <div class="col-sm-6">
+          <div class="col-sm-4">
+            <mat-form-field class="m-r-8 mx-width" appearance="outline">
+              <mat-label>Product Type</mat-label>
+              <!-- <input matInput placeholder="Issue Related" formControlName="issueRelated" > -->
+              <mat-select required formControlName="issueRelated" (selectionChange)="onIssueRelatedChange($event)">
+                @for (issueRel of issueRelatedArray; track issueRel;){
+                <mat-option value="{{issueRel.value}}">{{issueRel.name}}</mat-option>
+                <!-- <mat-option value="software">Software</mat-option> -->
+                }
+              </mat-select>
+              @if (ticketForm.get('issueRelated')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-4">
+            <mat-form-field appearance="outline" class="mx-width">
+              <mat-label>Incident Type</mat-label>
+              <mtx-select [items]="incident$ | async" bindLabel="type" bindValue="id" [virtualScroll]="true"
+                (scrollToEnd)="onIncidentScrollEnd()" (search)="onIncidentSearch($event)" [loading]="incidentLoading"
+                [searchable]="true" formControlName="typeId" (change)="onIncidentChange($event)">
+              </mtx-select>
+              @if (ticketForm.get('typeId')?.invalid) {
+              <mat-error>This field is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          @if(otherIncidentField){
+          <div class="col-sm-4">
+            <mat-form-field appearance="outline" class="mx-width">
+              <mat-label>Type</mat-label>
+              <input matInput formControlName="type" required>
+            </mat-form-field>
+          </div>
+
+          <div class="col-sm-4">
+            <mat-form-field appearance="outline" class="mx-width">
+              <mat-label>Details</mat-label>
+              <input matInput formControlName="details" required>
+            </mat-form-field>
+          </div>
+          }
+          <div class="col-sm-4">
             <mat-form-field class="w-full mx-width" appearance="outline">
               <mat-label>Device</mat-label>
               <mtx-select [items]="deviceArray$ | async" bindLabel="name" bindValue="id" formControlName="deviceId"
@@ -158,37 +654,48 @@
 
           <div class="col-sm-12">
             <mat-form-field class="full-width" appearance="outline">
-              <textarea matInput placeholder="Comment" formControlName="comment" name="text" required></textarea>
+              <textarea matInput placeholder="Comment" formControlName="comment" name="text"></textarea>
             </mat-form-field>
           </div>
 
-
-          <div class="col-sm-12">
-            <div class="bordered-div">
-            <button mat-raised-button color="success" (click)="onClick($event)">
-              <mat-icon>attachment</mat-icon>Attachments
-            </button>
-          </div>
-            <input #fileUpload type="file" class="input_fileupload--hidden" (input)="onInput($event)"
-              (change)="getFileDetails($event)" [accept]="accept" multiple formControlName="inputFileName">
-            <div style="margin-top: 5px;">
-              <mat-chip-list #chipList>
-                <ng-container *ngFor="let file of myFiles; let i = index">
-                  <mat-chip [color]="color" (removed)="onFileRemove(i)">
-                    {{i + 1}}. {{file.name}} - {{file.type}}
-                    <mat-icon matChipRemove>cancel</mat-icon>
-                  </mat-chip>
-                </ng-container>
-              </mat-chip-list>
+          <div class="row">
+            <div class="col-sm-12">
+              <button mat-raised-button color="success" (click)="onClick($event)">
+                <mat-icon>attachment</mat-icon>Attachments
+              </button>
+              <input #fileUpload type="file" class="input_fileupload--hidden" (input)="onInput($event)"
+                (change)="getFileDetails($event)" [accept]="accept" multiple>
             </div>
-
           </div>
 
+          <br><br>
+
+
+          <div class="row">
+            <div formArrayName="files" *ngFor="let item of ticketForm.get('files')?.controls; let i = index;">
+              <div [formGroupName]="i">
+                <div class="row">
+                  <div class="col-sm-6">
+                    {{i+1}}.
+                    <input matInput placeholder="file" formControlName="fileName" readonly style="width: 90%;">
+                  </div>
+                  <div class="col-sm-6">
+                    <input matInput placeholder="Optional description" formControlName="description"
+                      style="width: 90%;">
+                    <mat-icon style="cursor: pointer;" (click)="onFileRemove(i)">delete</mat-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <br>
 
         </div>
 
         <div class="m-t-8 d-flex justify-content-end" *ngIf="addStatus">
-          <button mat-raised-button color="primary" (click)="addTicket(formGroupDirective)">Save</button>
+          <button mat-raised-button color="primary" (click)="addTicket(formGroupDirective)"
+            [disabled]="!ticketForm.valid">Save</button>
         </div>
       </form>
     </mat-card-content>

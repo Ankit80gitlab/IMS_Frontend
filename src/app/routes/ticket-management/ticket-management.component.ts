@@ -1,25 +1,28 @@
-import {Component, ElementRef, ViewChild, inject} from '@angular/core';
-import {MatCardModule} from '@angular/material/card';
-import {PageHeaderComponent} from '@shared';
+import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { PageHeaderComponent } from '@shared';
 import {
     FormsModule,
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatInputModule} from '@angular/material/input';
-import {MatSelectModule} from '@angular/material/select';
-import {MatButtonModule} from '@angular/material/button';
-import {ProductMangementService} from 'app/services/product-mangement.service';
-import {CommonModule} from '@angular/common'
-import {MatDialogModule} from '@angular/material/dialog';
-import {MtxGrid, MtxGridColumn, MtxGridModule} from '@ng-matero/extensions/grid';
-import {MatIcon} from '@angular/material/icon';
-import {Constant} from 'app/utility/constant';
-import {TicketManagementService} from 'app/services/ticket-management.service';
-import {Subject, debounceTime, distinctUntilChanged, filter, fromEvent, tap} from 'rxjs';
-import {MatMenu, MatMenuContent, MatMenuModule, MatMenuTrigger} from '@angular/material/menu';
-import {ActivatedRoute, Router} from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { CommonModule } from '@angular/common'
+import { MatDialogModule } from '@angular/material/dialog';
+import { MtxGrid, MtxGridColumn, MtxGridModule } from '@ng-matero/extensions/grid';
+import { MatIcon } from '@angular/material/icon';
+import { Constant } from 'app/utility/constant';
+import { TicketManagementService } from 'app/services/ticket-management.service';
+import { MatMenu, MatMenuContent, MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
+import { WebSocketSubject } from 'rxjs/webSocket';
+import { WebsocketService } from 'app/services/websocket.service';
+import { SharedWebSocketService } from 'app/services/shared-websocket.service';
+import { Subscription } from 'rxjs';
 
 export interface TicketElement {
     id: number;
@@ -33,11 +36,7 @@ export interface TicketElement {
 }
 
 export class Filter {
-    constructor(
-        public name: string,
-        public selected: boolean
-    ) {
-    }
+    constructor(public name: string, public selected: boolean) { }
 }
 
 @Component({
@@ -59,34 +58,45 @@ export class Filter {
         MatMenu,
         MatMenuTrigger,
         MatMenuContent,
-        MatMenuModule
+        MatMenuModule,
     ],
     templateUrl: './ticket-management.component.html',
     styleUrl: './ticket-management.component.css'
 })
 export class TicketManagementComponent {
+
+    private ticketMgmtServ = inject(TicketManagementService);
+    private readonly toast = inject(ToastrService);
+    private webSocketService = inject(WebsocketService);
+
+    @ViewChild('grid') grid!: MtxGrid;
+    @ViewChild('subTicketGrid') subTicketGrid!: MtxGrid;
+
     isLoading = false;
     columnSortable = true;
     rowHover = false;
     rowStriped = false;
     showPaginator = false;
+
     pageNo: number = 0;
     pageSize: number = 50;
+
     selectedValue: any;
     selectedOption: string = '';
+
     typeArray: any[] = [];
     priorityArray: any[] = [];
-    selectedCount: any = {selectedtypeCount: 0, selectedPriorityCount: 0}
+    selectedCount: any = { selectedtypeCount: 0, selectedPriorityCount: 0, selectedIssueRelatedCount: 0 }
 
     options: string[] = ['Option 1', 'Option 2', 'Option 3'];
-    @ViewChild('grid')
-    grid!: MtxGrid;
+
     columns: MtxGridColumn[] = [
         {
-            header: 'S.No',
-            field: 'sNo',
+            header: 'Ticket ID',
+            field: 'id',
             minWidth: 50,
             width: '100px',
+            showExpand: true
         },
         {
             header: 'Subject',
@@ -125,15 +135,15 @@ export class TicketManagementComponent {
         },
         {
             header: 'Assignee',
-            field: 'customer.name',
+            field: 'assignedTo.userName',
             sortable: true,
             minWidth: 100,
             width: '100px',
         },
         {
             field: 'operation',
-            minWidth: 140,
-            width: '140px',
+            minWidth: 100,
+            width: '100px',
             pinned: 'right',
             type: 'button',
             buttons: [
@@ -142,80 +152,126 @@ export class TicketManagementComponent {
                     icon: 'edit',
                     tooltip: 'Edit the ticket',
                     click: record => this.editTicket(record),
-                },
+                }
             ],
         },
     ];
+
+    columns2: MtxGridColumn[] = [
+        {
+            header: 'Ticket ID',
+            field: 'id',
+            minWidth: 50,
+            width: '100px',
+        },
+        {
+            header: 'Subject',
+            field: 'subject',
+            sortable: true,
+            minWidth: 150,
+            width: '150px',
+        },
+        {
+            header: 'Priority',
+            field: 'priority',
+            sortable: true,
+            minWidth: 100,
+            width: '100px',
+        },
+        {
+            header: 'Status',
+            field: 'status',
+            sortable: true,
+            minWidth: 100,
+            width: '100px',
+        },
+        {
+            header: 'Assignee',
+            field: 'assignedTo.userName',
+            sortable: true,
+            minWidth: 100,
+            width: '100px',
+        },
+        {
+            field: 'operation',
+            minWidth: 50,
+            width: '50px',
+            pinned: 'right',
+            type: 'button',
+            buttons: [
+                {
+                    type: 'icon',
+                    icon: 'edit',
+                    tooltip: 'Edit the ticket',
+                    click: (record: any) => this.editTicket(record),
+                }
+            ],
+        },
+    ];
+
+    onExpandChange(e: any) {
+        // console.log(e);
+    }
+
+
     list: any[] = [];
     searchTerm: any;
     filters: Array<any> = []
-    @ViewChild('input')
-    input!: ElementRef;
-    types: Filter[] = [
-        new Filter('Bug', false),
-        new Filter('Feature', false),
-        new Filter('Support', false),
 
+    @ViewChild('input') input!: ElementRef;
+
+    status: Filter[] = [
+        new Filter('new', false),
+        new Filter('In Progress', false),
+        new Filter('Resolved', false),
     ]
     prioritys: Filter[] = [
-        new Filter('High', false),
         new Filter('Low', false),
         new Filter('Medium', false),
+        new Filter('High', false),
+        new Filter('Immediate', false),
     ];
-    private ticketMgmtServ = inject(TicketManagementService);
+    issueRelated: Filter[] = [
+        new Filter('Software', false),
+        new Filter('Hardware', false),
+    ];
 
-    constructor(private route: ActivatedRoute, private router: Router) {
+    constructor(private route: ActivatedRoute, private router: Router, private cdr: ChangeDetectorRef) {
     }
 
+    private sharedWebSocketService = inject(SharedWebSocketService);
+    websocketSubscription!: Subscription;
+
     ngOnInit(): void {
+        this.loadTickets(0, '', '', '');
+        setTimeout(() => {
+            this.websocketSubscription = this.sharedWebSocketService.currentData.subscribe(resp => {
+                if (resp != null) {
+                    if (resp.created === 'ticket') {
+                        this.websocketTriggered();
+                    }
+                }
+            });
+        }, 200)
 
-        this.route.queryParams.subscribe(params => {
-            const typeParam = params['type'];
-            const priorityParam = params['priority'];
-            this.typeArray = typeParam?.split(',');
-            this.priorityArray = priorityParam?.split(',');
-        });
-        let i = 0;
-        this.typeArray?.forEach(type => {
-            const filter = this.types.find(f => f.name === type.trim());
-            if (filter) {
-                filter.selected = true;
-                i++;
-            }
-        });
+    }
 
-        let j = 0;
-        this.priorityArray?.forEach(priority => {
-            const filter = this.prioritys.find(f => f.name === priority.trim());
-            if (filter) {
-                filter.selected = true;
-                j++;
-            }
-        });
-        this.selectedCount.selectedtypeCount = i;
-        this.selectedCount.selectedPriorityCount = j;
-        this.loadTickets("", 0, this.typeArray, this.priorityArray);
-
+    websocketTriggered() {
+        this.list = [];
+        this.loadTickets(0, '', '', '');
+        this.toast.success("New ticket assigned");
+        this.sharedWebSocketService.makeNull();
     }
 
     ngAfterViewInit() {
         this.addScrollEventListener();
-        fromEvent(this.input.nativeElement, 'keyup')
-            .pipe(
-                filter(Boolean),
-                debounceTime(500),
-                distinctUntilChanged(),
-                tap(text => {
-                    this.list = []
-                    this.pageNo = 0;
-                    this.loadTickets(this.searchTerm, 0);
-                })
-            )
-            .subscribe();
     }
 
     ngOnDestroy(): void {
         this.removeScrollEventListener();
+        if (this.websocketSubscription) {
+            this.websocketSubscription.unsubscribe();
+        }
     };
 
     toggleDropdown(selectElement: any) {
@@ -227,12 +283,12 @@ export class TicketManagementComponent {
         console.log('Selected option:', this.selectedOption);
     }
 
-    loadTickets(term: string = '', pageNo: number = 0, priority: any[] = [], type: any[] = []) {
+    loadTickets(pageNo: number = 0, issueRelated: any, priority: any, status: any) {
         this.isLoading = true;
-        this.ticketMgmtServ.getAllTicket(term, pageNo, this.pageSize, type, priority).subscribe({
+        this.ticketMgmtServ.getAllTicket(pageNo, this.pageSize, issueRelated, priority, status).subscribe({
             next: response => {
-                console.log(response)
                 if (response.status == Constant.SUCCESS) {
+                    // console.log(response);
                     let i = 0;
                     response.data.forEach((ticket: TicketElement) => {
                         ticket.sNo = this.pageSize * pageNo + i + 1;
@@ -251,7 +307,11 @@ export class TicketManagementComponent {
     }
 
     Fetch() {
-        this.loadTickets(this.searchTerm, ++this.pageNo);
+        if (this.isFilterEnabled) {
+            this.loadTickets(++this.pageNo, this.searchCriteriaObj.issueRelated, this.searchCriteriaObj.priority, this.searchCriteriaObj.status);
+        } else {
+            this.loadTickets(++this.pageNo, '', '', '');
+        }
     }
 
     addScrollEventListener(): void {
@@ -274,31 +334,130 @@ export class TicketManagementComponent {
         }
     }
 
-    selectFilter($event: any, filter: Filter) {
-        // prevent menu from closing
+    selectStatusFilter($event: any, filter: Filter) {
         $event.stopPropagation();
         $event.preventDefault();
-        // toggle selected state on clicked animal
-        filter.selected = !filter.selected;
-        // update selection vars
+        if (filter.selected === false) {
+            this.status.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = true;
+                } else { f.selected = false; }
+            });
+        } else {
+            this.status.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = false;
+                } else { f.selected = false; }
+            });
+        }
         this.updateSelectedFilter();
     }
 
+    selectPriorityFilter($event: any, filter: Filter) {
+        $event.stopPropagation();
+        $event.preventDefault();
+        if (filter.selected === false) {
+            this.prioritys.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = true;
+                } else { f.selected = false; }
+            });
+        } else {
+            this.prioritys.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = false;
+                } else { f.selected = false; }
+            });
+        }
+        this.updateSelectedFilter();
+    }
+
+    selectIssueRelatedFilter($event: any, filter: Filter) {
+        $event.stopPropagation();
+        $event.preventDefault();
+        if (filter.selected === false) {
+            this.issueRelated.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = true;
+                } else { f.selected = false; }
+            });
+        } else {
+            this.issueRelated.find(f => {
+                if (f.name === filter.name) {
+                    f.selected = false;
+                } else { f.selected = false; }
+            });
+        }
+        this.updateSelectedFilter();
+    }
+
+    searchCriteriaObj = { status: "", priority: "", issueRelated: "" };
+    isFilterEnabled: boolean = false;
+
     updateSelectedFilter() {
-        // get count by type
-        this.selectedCount.selectedtypeCount = this.types.filter(a => a.selected).length;
+        this.selectedCount.selectedtypeCount = this.status.filter(a => a.selected).length;
         this.selectedCount.selectedPriorityCount = this.prioritys.filter(a => a.selected).length;
+        this.selectedCount.selectedIssueRelatedCount = this.issueRelated.filter(a => a.selected).length;
+        let selectedStatus = "";
+        let selectedPriority = "";
+        let selectedIssueRelated = "";
+        this.status.forEach((obj: any) => {
+            if (obj.selected == true) {
+                if (obj.name === "In Progress") {
+                    selectedStatus = "InProgress"
+                } else {
+                    selectedStatus = obj.name;
+                }
+            }
+        });
+        this.prioritys.forEach((obj: any) => {
+            if (obj.selected == true) {
+                selectedPriority = obj.name;
+            }
+        });
+        this.issueRelated.forEach((obj: any) => {
+            if (obj.selected == true) {
+                selectedIssueRelated = obj.name;
+            }
+        });
+
+        this.searchCriteriaObj.status = selectedStatus;
+        this.searchCriteriaObj.priority = selectedPriority;
+        this.searchCriteriaObj.issueRelated = selectedIssueRelated;
+        if (this.searchCriteriaObj.issueRelated === "" &&
+            this.searchCriteriaObj.priority === "" &&
+            this.searchCriteriaObj.status === ""
+        ) {
+            this.isFilterEnabled = false;
+        } else this.isFilterEnabled = true;
+
         this.list = []
         this.grid.dataSource.data = this.list;
-        this.loadTickets("", 0, this.types, this.prioritys);
-
+        this.loadTickets(0, selectedIssueRelated, selectedPriority, selectedStatus);
     }
 
     editTicket(data: any) {
+        // this.sharedService.set(data);
         this.router.navigate(['/ticketDetail', data.id]);
     }
 
     addNew() {
         this.router.navigate(['/ticketDetail']);
+    }
+
+    deleteTicket(ticket: any) {
+        this.ticketMgmtServ.deleteTicket(ticket.id).subscribe({
+            next: (response) => {
+                if (response.status == Constant.SUCCESS) {
+                    this.toast.success(response.message);
+                    this.list = this.list.filter(item => item.id != ticket.id);
+                    this.grid.dataSource.data = this.list;
+                } else {
+                    this.toast.error(response.message);
+                }
+            }, error(err) {
+                console.log(err);
+            },
+        })
     }
 }

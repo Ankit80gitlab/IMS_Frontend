@@ -32,9 +32,7 @@ export class CreateAreaConfirmDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<CreateAreaConfirmDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
-  ) {
-    
-  }
+  ) {}
 
   onNoClick(): void {
     this.dialogRef.close();

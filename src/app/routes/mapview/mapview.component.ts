@@ -14,7 +14,7 @@ import Icon from 'ol/style/Icon';
 import Style from 'ol/style/Style';
 import { DeviceConfigurationService } from "../../services/device-configuration.service";
 import { ToastrService } from 'ngx-toastr';
-import { BehaviorSubject, catchError, Observable, of, switchMap, take, tap } from "rxjs";
+import { BehaviorSubject, catchError, Observable, of, Subscription, switchMap, take, tap } from "rxjs";
 import { Constant } from "../../utility/constant";
 import { FeatureLike } from "ol/Feature";
 import { Polygon } from "ol/geom";
@@ -29,6 +29,9 @@ import { Renderer2 } from '@angular/core';
 import { toLonLat } from 'ol/proj';
 import { toStringHDMS } from 'ol/coordinate';
 import * as olProj from 'ol/proj';
+import { WebsocketService } from 'app/services/websocket.service';
+import { SharedWebSocketService } from 'app/services/shared-websocket.service';
+import { Router } from '@angular/router';
 
 
 
@@ -50,6 +53,7 @@ export class MapviewComponent {
   @ViewChild('map', { static: true }) mapElement!: ElementRef;
   private readonly deviceConfigurationService: DeviceConfigurationService = inject(DeviceConfigurationService);
   private readonly toast = inject(ToastrService);
+  private webSocketService = inject(WebsocketService);
 
   private deviceSubject: BehaviorSubject<Object[]> = new BehaviorSubject<Object[]>([]);
   deviceArray$: Observable<Object[]> = this.deviceSubject.asObservable();
@@ -66,6 +70,7 @@ export class MapviewComponent {
   zoneVectorLayer!: VectorLayer<any>;
   areaVectorLayer!: VectorLayer<any>;
   deviceVectorLayer!: VectorLayer<any>;
+  warningVectorLayer!: VectorLayer<any>;
   PROJECTION_EPSG_3857: string = 'EPSG:3857';
   PROJECTION_EPSG_4326: string = 'EPSG:4326';
   towerIcon!: Icon;
@@ -143,7 +148,7 @@ export class MapviewComponent {
 
   getDeviceStyle = (feature: FeatureLike, resolution: number): Style => {
     const zoom: any = this.map.getView().getZoom();
-    const scale = zoom / 30
+    const scale = zoom / 15
     this.towerIcon = new Icon({
       src: "./assets/images/map-icons/device-add.png",
       scale: scale
@@ -154,17 +159,64 @@ export class MapviewComponent {
     });
   };
 
+  getWarningStyle = (): Style => {
+    const zoom: any = this.map.getView().getZoom();
+    const scale = zoom / 30
+    const warningIcon = new Icon({
+      scale: 0.05,
+      color: 'red',
+      crossOrigin: 'anonymous',
+      src: './assets/images/map-icons/mark.png',
+    })
+
+    return new Style({
+      image: warningIcon,
+    });
+  };
+
+
   container: any;
   content: any;
   closer: any;
   overlay!: Overlay;
 
-  constructor(private renderer: Renderer2) {
+  constructor(private renderer: Renderer2, private router: Router) {
 
   }
 
+  websocketSubscription!: Subscription;
+  private sharedWebSocketService = inject(SharedWebSocketService);
+
+  blinkPoint() {
+    let isVisible = true;
+    setInterval(() => {
+      if (this.warningVectorLayer) {
+        this.warningVectorLayer.setStyle(
+          isVisible
+            ? new Style({})
+            : new Style({
+              image: new Icon({
+                scale: 0.055,
+                color: 'red',
+                crossOrigin: 'anonymous',
+                src: './assets/images/map-icons/mark.png',
+              }),
+            })
+        );
+        isVisible = !isVisible;
+      }
+    }, 500);
+  }
 
   ngOnInit(): void {
+
+    this.websocketSubscription = this.sharedWebSocketService.currentData.subscribe(resp => {
+      if (resp != null) {
+        if (resp.created === 'ticket') {
+          this.websocketTriggered();
+        }
+      }
+    });
 
     this.container = this.renderer.selectRootElement('#popup', true);
     this.content = this.renderer.selectRootElement('#popup-content', true);
@@ -191,6 +243,13 @@ export class MapviewComponent {
       zIndex: 2
     });
 
+    const warningSource = new VectorSource();
+    this.warningVectorLayer = new VectorLayer({
+      source: warningSource,
+      style: this.getWarningStyle,
+      zIndex: 2
+    })
+
     const raster = new TileLayer({
       source: new OSM(),
     });
@@ -206,7 +265,7 @@ export class MapviewComponent {
 
     this.map = new Map({
       target: this.mapElement.nativeElement,
-      layers: [raster, this.zoneVectorLayer, this.areaVectorLayer, this.deviceVectorLayer],
+      layers: [raster, this.zoneVectorLayer, this.areaVectorLayer, this.deviceVectorLayer, this.warningVectorLayer],
       overlays: [this.overlay],
       view: new View({
         center: fromLonLat([0, 0]),
@@ -223,12 +282,42 @@ export class MapviewComponent {
       take(1),
     ).subscribe(initialItems => {
       this.addDeviceFeaturesInMap(initialItems);
+      this.addWarningFeaturesInMap(initialItems);
       this.deviceSubject.next(initialItems);
     });
 
     this.hover();
-
+    this.goToCoordinates(74.23960624117996, 19.984221186721683, 12);
+    this.addWarningFeaturesInMap
+    this.blinkPoint();
   }
+
+  goToCoordinates(lon: number, lat: number, zoom: number): void {
+    const view = this.map.getView();
+    const coordinates = fromLonLat([lon, lat]);
+    view.animate({
+      center: coordinates,
+      duration: 2000,
+    });
+    view.animate({
+      zoom: zoom,
+      duration: 2000,
+    });
+  }
+
+  websocketTriggered() {
+    this.toast.success("New ticket assigned");
+    this.sharedWebSocketService.makeNull();
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate(['/mapView']);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.websocketSubscription) {
+      this.websocketSubscription.unsubscribe();
+    }
+  };
 
   loadZones(term: string = "", pageNo: number = 0): Observable<Object[]> {
     return this.deviceConfigurationService.getAllZones(term, pageNo, Constant.DEFAULT_PAGE_SIZE).pipe(
@@ -262,7 +351,6 @@ export class MapviewComponent {
   loadAreas(term: string = "", pageNo: number = 0): Observable<Object[]> {
     return this.deviceConfigurationService.getAreas(this.selectedZone, term, pageNo, 1000).pipe(
       switchMap((response: any) => {
-
         let items = [];
         if (response.status == Constant.SUCCESS) {
           items = response.data;
@@ -389,13 +477,31 @@ export class MapviewComponent {
         productName: product.name,
         lat: device.lat,
         lon: device.lon,
+        priorities: device.priorities,
+        ticketCount : device.ticketCount,
         index: i
       });
-
       features.push(feature);
     }
     let source = this.deviceVectorLayer.getSource();
     source!.addFeatures(features);
+  };
+
+  addWarningFeaturesInMap(items: Object[]): void {
+    let features: Array<Feature> = [];
+    for (let i = 0; i < items.length; i++) {
+      let device: any = items[i];
+      if (device.ticketCount > 0) {
+        let feature: Feature = new Feature({
+          name: device.name,
+          geometry: new Point([device.lat, device.lon]).transform(this.PROJECTION_EPSG_4326, this.PROJECTION_EPSG_3857)
+        });
+        feature.setId("device_" + device.id);
+        features.push(feature);
+      }
+      let warningSource = this.warningVectorLayer.getSource();
+      warningSource!.addFeatures(features);
+    }
   };
 
   enableDeviceView: boolean = true;
@@ -464,14 +570,35 @@ export class MapviewComponent {
     const featureValue = feature.getProperties();
     let type = featureValue.type;
     if (type === 'device') {
-      let id = featureValue.id;
       let lat = featureValue.lat;
       let lon = featureValue.lon
       let deviceName = featureValue.name;
-      const hdms = toStringHDMS([lat, lon]);
-      this.renderer.setProperty(this.content, 'innerHTML',
-        '<small> Device ID : ' + id + '</small>' + ' | ' + '<small> Device Name : ' + deviceName + '</small><br><code>' + hdms + '</code>');
+      let uid = featureValue.uid;
+      let ticketCount = featureValue.ticketCount;
+      let lowCount, mediumCount, highCount, immediateCount = 0;
+      featureValue.priorities.forEach((e: any) => {
+        if (e.priority === "low") { lowCount = e.count }
+        else if (e.priority === "medium") { mediumCount = e.count }
+        else if (e.priority === "high") { highCount = e.count }
+        else if (e.priority === "immediate") { immediateCount = e.count }
+      });
+      if(ticketCount>0){
+        this.renderer.setProperty(this.content, 'innerHTML',
+          '<small><b>' + deviceName + '</b> ( uId : <b>' + uid + '</b> ) | Ticket Count : <b>'+ ticketCount +'</b></small><hr>' +
+          '<div class="row">' +
+          '<div class="col-sm-3">' + '<div style="border: 1px solid black; height: 25px; color: white; background-color: green; text-align:center;">' + lowCount + '</div></div>' +
+          '<div class="col-sm-3">' + '<div style="border: 1px solid black; height: 25px; color: white; background-color: yellow; text-align:center;">' + mediumCount + '</div></div>' +
+          '<div class="col-sm-3">' + '<div style="border: 1px solid black; height: 25px; color: white; background-color: orange; text-align:center;">' + highCount + '</div></div>' +
+          '<div class="col-sm-3">' + '<div style="border: 1px solid black; height: 25px; color: white; background-color: red; text-align:center;">' + immediateCount + '</div></div>' +
+          '</div>');
+      }else{
+        this.renderer.setProperty(this.content, 'innerHTML',
+          '<small><b>' + deviceName + '</b> ( uId - ' + uid + ' ) | No tickets are assigned '+'</small>')
+      }
       const olCoordinates = olProj.fromLonLat([lat, lon]);
+      setTimeout(() => {
+        this.overlay.setPosition(undefined);
+      }, 20000)
       this.overlay.setPosition(olCoordinates);
     }
   }

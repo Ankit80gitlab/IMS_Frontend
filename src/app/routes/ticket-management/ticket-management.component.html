@@ -1,57 +1,92 @@
 <page-header class="bg-green-600"></page-header>
+
+
 <div class="row">
   <div class="col-md-12">
     <mat-card>
-      
-      <div style="display: flex; justify-content: flex-end;">
-      <mat-card-header style="margin: auto;padding: 2%;">
-        <mat-card-title>Tickets</mat-card-title>
-      </mat-card-header>
-      <div style="margin-top: 5px;">
-        <button mat-raised-button class="menuTrigger" (click)="addNew()" >
-          New  <mat-icon style="color: #26a331;">add_circle</mat-icon>
-        </button>
-      </div>
-      <div style="margin: 5px 7px;">
-      <button mat-raised-button class="menuTrigger" [matMenuTriggerFor]="filter_menu" >
-        filter <mat-icon>filter_list</mat-icon>
-      </button>
-    </div>
-<mat-menu #filter_menu="matMenu">
-  <button mat-menu-item [matMenuTriggerFor]="type_menu">Type ({{selectedCount.selectedtypeCount}})</button>
-  <button mat-menu-item [matMenuTriggerFor]="priority_menu">Priority ({{selectedCount.selectedPriorityCount}})</button>
-  <!-- <button mat-menu-item [matMenuTriggerFor]="reptiles_menu">Reptiles ({{selectedReptileCount}})</button> -->
-</mat-menu>
-<mat-menu #type_menu="matMenu">
-  <button mat-menu-item *ngFor="let type of types" (click)="selectFilter($event, type)">
-    <mat-icon color="{{type.selected?'primary':''}}">{{type.selected?'check_box':'check_box_outline_blank'}}</mat-icon>{{type.name}}
-  </button>
-</mat-menu>
-<mat-menu #priority_menu="matMenu">
-  <button mat-menu-item *ngFor="let priority of prioritys" (click)="selectFilter($event, priority)">
-    <mat-icon color="{{priority.selected?'primary':''}}">{{priority.selected?'check_box':'check_box_outline_blank'}}</mat-icon>{{priority.name}}
-  </button>
-</mat-menu>
-    </div>
       <mat-card-content>
-        <div style="padding: 7px;">
-          <input class="form-control" type="text" name="search"
-                 [(ngModel)]="searchTerm" autocomplete="off" #input
-                 placeholder="Search Ticket">
-      </div>
 
-        <mtx-grid   #grid [data]="list" class="grid-height"
-        [columns]="columns"
-        [loading]="isLoading"
-        [rowHover]="rowHover"
-        [rowStriped]="rowStriped"
-        [columnSortable]="columnSortable"
-        [pageOnFront]="showPaginator"
-        [showPaginator]="false"
-        >
+        <div style="display: flex; justify-content: flex-end;">
+          <mat-card-header style="margin: auto;padding: 0%;">
+            <mat-card-title>Tickets</mat-card-title>
+          </mat-card-header>
+        </div>
+
+        <div class="row">
+          <div class="col-md-2">
+            <button mat-raised-button class="menuTrigger" [matMenuTriggerFor]="filter_menu">
+              filter <mat-icon>filter_list</mat-icon>
+            </button>
+          </div>
+          <div class="col-md-8"></div>
+          <div class="col-md-2" style="display: flex; justify-content: flex-end;">
+            <button mat-raised-button class="menuTrigger" (click)="addNew()">
+              New <mat-icon style="color: #26a331;">add_circle</mat-icon>
+            </button>
+          </div>
+        </div>
+        <br>
+
+
+        <mat-menu #filter_menu="matMenu">
+          <button mat-menu-item [matMenuTriggerFor]="type_menu">Status ({{selectedCount.selectedtypeCount}})</button>
+          <button mat-menu-item [matMenuTriggerFor]="priority_menu">Priority
+            ({{selectedCount.selectedPriorityCount}})</button>
+          <button mat-menu-item [matMenuTriggerFor]="issueRelated_menu">Issue Related
+            ({{selectedCount.selectedIssueRelatedCount}})</button>
+        </mat-menu>
+
+        <mat-menu #type_menu="matMenu">
+          <button mat-menu-item *ngFor="let stat of status" (click)="selectStatusFilter($event, stat)">
+            <mat-icon
+              color="{{stat.selected?'primary':''}}">{{stat.selected?'check_box':'check_box_outline_blank'}}</mat-icon>
+            {{stat.name}}
+          </button>
+        </mat-menu>
+
+        <mat-menu #priority_menu="matMenu">
+          <button mat-menu-item *ngFor="let priority of prioritys" (click)="selectPriorityFilter($event, priority)">
+            <mat-icon
+              color="{{priority.selected?'primary':''}}">{{priority.selected?'check_box':'check_box_outline_blank'}}</mat-icon>{{priority.name}}
+          </button>
+        </mat-menu>
+
+        <mat-menu #issueRelated_menu="matMenu">
+          <button mat-menu-item *ngFor="let issue of issueRelated" (click)="selectIssueRelatedFilter($event, issue)">
+            <mat-icon
+              color="{{issue.selected?'primary':''}}">{{issue.selected?'check_box':'check_box_outline_blank'}}</mat-icon>
+            {{issue.name}}
+          </button>
+        </mat-menu>
+
+
+
+        @if(false){
+        <div style="padding: 7px;">
+          <input class="form-control" type="text" name="search" [(ngModel)]="searchTerm" autocomplete="off" #input
+            placeholder="Search Ticket">
+        </div>
+        }
+
+        <mtx-grid #grid [data]="list" class="grid-height" [columns]="columns" [loading]="isLoading"
+          [rowHover]="rowHover" [rowStriped]="rowStriped" [columnSortable]="columnSortable"
+          [pageOnFront]="showPaginator" [showPaginator]="false" [expandable]="true" [expansionTemplate]="expansionTpl"
+          (expansionChange)="onExpandChange($event)">
         </mtx-grid>
+
+        <ng-template #expansionTpl let-row>
+          @if(row.subTickets.length!=0){
+          <mtx-grid [data]="row.subTickets" [columns]="columns2" [showPaginator]="false">
+          </mtx-grid>
+          }@else{
+          <p style="margin: auto;">No record found</p>
+          }
+
+        </ng-template>
+
       </mat-card-content>
+
     </mat-card>
   </div>
 
-  </div>
+</div>

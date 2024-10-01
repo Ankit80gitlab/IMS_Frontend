@@ -52,35 +52,21 @@
                         }
                     </mat-form-field>
 
-                    <div *ngIf="arePasswordfieldsRequired">
-                        <mat-form-field class="m-r-8" appearance="outline">
-                            <mat-label>Password</mat-label>
-                            <input autocomplete="new-password" type="password" matInput placeholder="Password"
-                                formControlName="password" required>
-                            @if (userForm.get('password').invalid && userForm.get('password').touched &&
-                            userForm.get('password').errors.required) {
-                            <mat-error>This field is required</mat-error>
-                            }
-                            @if (userForm.get('password').invalid && userForm.get('password').touched &&
-                            userForm.get('password').errors.minlength) {
-                            <mat-error>Password must be at least 6 characters long</mat-error>
-                            }
-                        </mat-form-field>
+                    <mat-form-field class="m-r-8" appearance="outline">
+                        <mat-label>Phone Number</mat-label>
+                        <input matInput type="number" placeholder="000 000 0000" formControlName="phoneNo">
+                        <mat-icon matSuffix>phone</mat-icon>
+                        @if (userForm.get('phoneNo')?.invalid) {
+                        <mat-error>10 digits required without country code</mat-error>
+                        }
+                        @if (userForm.controls.phoneNo.errors?.numeric) {
+                        <mat-error>Only numbers are allowed</mat-error>
+                        }
+                        <div >
+                            <mat-error *ngIf="userForm.controls.phoneNo.errors?.numeric">Only numbers are allowed</mat-error>
+                        </div>
 
-                        <mat-form-field class="m-r-8" appearance="outline">
-                            <mat-label>Confirm Password</mat-label>
-                            <input type="password" matInput placeholder="Confirm Password"
-                                formControlName="confirmPassword" required>
-                            @if (userForm.get('confirmPassword').invalid && userForm.get('confirmPassword').touched &&
-                            userForm.get('confirmPassword').errors.required) {
-                            <mat-error>This field is required</mat-error>
-                            }
-                            @if (userForm.get('confirmPassword').invalid && userForm.get('confirmPassword').touched &&
-                            userForm.get('confirmPassword').errors.passwordMismatch) {
-                            <mat-error>Passwords does not match</mat-error>
-                            }
-                        </mat-form-field>
-                    </div>
+                    </mat-form-field>
 
                     <mat-form-field>
                         <mat-label>Select User Type</mat-label>
@@ -103,23 +89,24 @@
                         }
                     </mat-form-field>
 
-
-
-                    <mat-form-field class="m-r-8" appearance="outline">
-                        <mat-label>Select Customer</mat-label>
-                        <mtx-select [(value)]="fetchedCustomer" [items]="customer$ | async" bindLabel="name"
-                            bindValue="id" [virtualScroll]="true" (scrollToEnd)="onScrollEnd()"
-                            [compareWith]="compareFn" (search)="onSearch($event)" [loading]="customerLoading"
-                            [searchable]="true" formControlName="customerName" (change)="onCustomerSelectionChange()">
-                        </mtx-select>
-                        @if (userForm.get('customerName')?.invalid) {
-                        <mat-error>This field is required</mat-error>
-                        }
-                    </mat-form-field>
+                    <div *ngIf="admin">
+                        <mat-form-field class="m-r-8" appearance="outline">
+                            <mat-label>Select Customer</mat-label>
+                            <mtx-select [(value)]="fetchedCustomer" [items]="customer$ | async" bindLabel="name"
+                                bindValue="id" [virtualScroll]="true" (scrollToEnd)="onScrollEnd()"
+                                [compareWith]="compareFn" (search)="onSearch($event)" [loading]="customerLoading"
+                                [searchable]="true" formControlName="customerName"
+                                (change)="onCustomerSelectionChange()">
+                            </mtx-select>
+                            @if (userForm.get('customerName')?.invalid) {
+                            <mat-error>This field is required</mat-error>
+                            }
+                        </mat-form-field>
+                    </div>
 
                 </form>
 
-                <mat-form-field *ngIf="foundCustomerProduct">
+                <mat-form-field>
                     <mat-label>Products</mat-label>
                     <mtx-select [disabled]="fcpDisable" [(ngModel)]="selectedProductIds" bindLabel="name" bindValue="id"
                         [multiple]="true" appendTo="app-user-management">

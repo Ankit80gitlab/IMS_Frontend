@@ -1,0 +1,36 @@
+<h2 mat-dialog-title>Add Details</h2>
+<mat-divider></mat-divider>
+
+<mat-dialog-content>
+    <div [formGroup]="incidentTypeForm" #formGroupDirective="ngForm" class="form-field-full">
+
+        <div class="row">
+            <div class="col-md-6">
+                <mat-form-field class="m-r-8" appearance="outline">
+                    <mat-label>Incident Type</mat-label>
+                    <input matInput placeholder="Type" formControlName="type" required>
+                </mat-form-field>
+            </div>
+            <div class="col-md-6">
+                <mat-form-field class="m-r-8" appearance="outline">
+                    <mat-label>Description</mat-label>
+                    <input matInput placeholder="Description" formControlName="description">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row">
+                <button class="col-sm-4" mat-raised-button color="custom-green"
+                    (click)="onCloseClick(formGroupDirective)">
+                    Close
+                </button>
+                <!-- <button class="col-sm-4" mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button> -->
+                <button [disabled]="!incidentTypeForm.valid" class="col-sm-4" mat-raised-button color="primary"
+                    (click)="onSaveClick()">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</mat-dialog-content>

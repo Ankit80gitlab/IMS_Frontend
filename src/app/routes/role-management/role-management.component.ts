@@ -305,10 +305,16 @@ export class RoleManagementComponent implements OnInit {
         next: (resp) => {          
           if (resp.status === "success") {
             this.toast.success(resp.message);
-            newRoleObject.id = resp.data.id;
-            newRoleObject.sNo = this.allRoles.length + 1;
-            this.allRoles.push(newRoleObject);
-            this.grid.dataSource.data = this.allRoles;
+
+            // newRoleObject.id = resp.data.id;
+            // newRoleObject.sNo = this.allRoles.length + 1;
+            // this.allRoles.push(newRoleObject);
+            // this.grid.dataSource.data = this.allRoles;
+
+            this.allRoles = []
+            this.grid.dataSource.data = [];
+            this.rolePageNo = 0;
+            this.loadRoles();
 
             this.selectedFeatureOfRole = null;
             this.isFeatureFieldValid = false;

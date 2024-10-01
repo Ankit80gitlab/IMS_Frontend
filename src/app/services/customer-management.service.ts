@@ -7,7 +7,7 @@ import { TokenService } from '@core';
   providedIn: 'root'
 })  
 export class CustomerManagementService {
-  getAllCustomer_Url = "/customerManagement/getAllCustomers"
+  getAllCustomer_Url = "/customerManagement/getAllCustomersCompleteDetails"
   createCustomer_Url = "/customerManagement/addCustomer"
   deleteCustomer_Url = "/customerManagement/deleteCustomer"
   // searchCustomer_Url = "/customerManagement/search"

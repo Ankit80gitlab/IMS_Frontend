@@ -20,7 +20,7 @@ export class DeviceConfigurationService {
   addDeviceUrl: string = '/deviceManagement/addDevice';
   updateDeviceUrl: string = '/deviceManagement/updateDevice';
   deleteDeviceUrl: string = '/deviceManagement/deleteDevice';
-  getAllDeviceProductUrl: string = '/deviceManagement/getTotalDevices';
+  getAllDeviceProductUrl: string = '/deviceManagement/getTotalDevicesOfProduct';
 
   getAllZones(searchByName: string, pageNo: number, pageSize: number) {
     const params = new HttpParams()

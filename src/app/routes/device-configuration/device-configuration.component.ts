@@ -1,45 +1,45 @@
-import {Component, ElementRef, ViewChild, inject, OnInit} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {ConfirmDialogModule} from 'primeng/confirmdialog';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {CommonModule} from '@angular/common';
-import {MatSelectModule} from '@angular/material/select';
-import {MatTooltipModule} from '@angular/material/tooltip';
-import {ButtonModule} from 'primeng/button';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatInputModule} from '@angular/material/input';
-import {PageHeaderComponent} from "@shared";
-import {MatCard, MatCardContent} from "@angular/material/card";
-import {MatSidenavModule} from '@angular/material/sidenav';
-import {MatToolbarModule} from '@angular/material/toolbar';
-import {MatIconModule} from '@angular/material/icon';
-import {MatNavList} from "@angular/material/list";
-import {MatButtonModule} from '@angular/material/button';
-import {ToastrService} from 'ngx-toastr';
+import { Component, ElementRef, ViewChild, inject, OnInit } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { CommonModule } from '@angular/common';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ButtonModule } from 'primeng/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatInputModule } from '@angular/material/input';
+import { PageHeaderComponent } from "@shared";
+import { MatCard, MatCardContent } from "@angular/material/card";
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatNavList } from "@angular/material/list";
+import { MatButtonModule } from '@angular/material/button';
+import { ToastrService } from 'ngx-toastr';
 import VectorLayer from "ol/layer/Vector";
-import {Feature, Map, MapBrowserEvent, View} from "ol";
+import { Feature, Map, MapBrowserEvent, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
-import {fromLonLat} from "ol/proj";
+import { fromLonLat } from "ol/proj";
 import VectorSource from "ol/source/Vector";
-import {Draw, Modify, Select, Snap} from "ol/interaction";
-import {ZoomSlider} from "ol/control";
-import {MtxSelect} from "@ng-matero/extensions/select";
-import {DeviceConfigurationService} from "../../services/device-configuration.service";
-import {MatDivider} from "@angular/material/divider";
-import {SelectEvent} from "ol/interaction/Select";
-import {MatDialog, MatDialogContent, MatDialogRef} from "@angular/material/dialog";
-import {ZoneConfigurationComponent} from "./dialog/zone-configuration/zone-configuration.component";
-import {AreaConfigurationComponent} from "./dialog/area-configuration/area-configuration.component";
-import {DrawEvent} from "ol/interaction/Draw";
-import {Constant} from "../../utility/constant";
-import {Point, Polygon} from "ol/geom";
+import { Draw, Modify, Select, Snap } from "ol/interaction";
+import { ZoomSlider } from "ol/control";
+import { MtxSelect } from "@ng-matero/extensions/select";
+import { DeviceConfigurationService } from "../../services/device-configuration.service";
+import { MatDivider } from "@angular/material/divider";
+import { SelectEvent } from "ol/interaction/Select";
+import { MatDialog, MatDialogContent, MatDialogRef } from "@angular/material/dialog";
+import { ZoneConfigurationComponent } from "./dialog/zone-configuration/zone-configuration.component";
+import { AreaConfigurationComponent } from "./dialog/area-configuration/area-configuration.component";
+import { DrawEvent } from "ol/interaction/Draw";
+import { Constant } from "../../utility/constant";
+import { Point, Polygon } from "ol/geom";
 import geom from "ol/geom";
 import Style from "ol/style/Style";
-import {Fill, Stroke, Text} from "ol/style";
+import { Fill, Stroke, Text } from "ol/style";
 import CircleStyle from "ol/style/Circle";
-import {FeatureLike} from "ol/Feature";
+import { FeatureLike } from "ol/Feature";
 import {
     BehaviorSubject,
     catchError,
@@ -51,14 +51,14 @@ import {
     tap
 } from "rxjs";
 import Icon from "ol/style/Icon";
-import {Coordinate} from "ol/coordinate";
+import { Coordinate } from "ol/coordinate";
 import {
     FeatureDeviceConfigurationComponent
 } from "./dialog/feature-device-configuration/feature-device-configuration.component";
-import {DialogService} from "../../utility/dialog.service";
-import {Extent} from "ol/extent";
-import {AuthService, User} from "@core";
-import {FeatureType} from "ol/format/WFS";
+import { DialogService } from "../../utility/dialog.service";
+import { Extent } from "ol/extent";
+import { AuthService, User } from "@core";
+import { FeatureType } from "ol/format/WFS";
 
 @Component({
     selector: 'app-device-configuration',
@@ -93,10 +93,10 @@ import {FeatureType} from "ol/format/WFS";
 
 
 export class DeviceConfigurationComponent implements OnInit {
-    @ViewChild('map', {static: true}) mapElement!: ElementRef;
+    @ViewChild('map', { static: true }) mapElement!: ElementRef;
     private readonly deviceConfigurationService: DeviceConfigurationService = inject(DeviceConfigurationService);
     private readonly toast = inject(ToastrService);
-
+    private authService = inject(AuthService);
     constructor(public dialog: MatDialog, private dialogService: DialogService) {
     }
 
@@ -158,8 +158,8 @@ export class DeviceConfigurationComponent implements OnInit {
             textBaseline: baseline,
             font: font,
             text: resolution > 2500 ? '' : feature.get("name"),
-            fill: new Fill({color: fillColor}),
-            stroke: new Stroke({color: outlineColor, width: outlineWidth}),
+            fill: new Fill({ color: fillColor }),
+            stroke: new Stroke({ color: outlineColor, width: outlineWidth }),
             placement: placement,
             maxAngle: maxAngle,
             overflow: overflow,
@@ -257,7 +257,19 @@ export class DeviceConfigurationComponent implements OnInit {
         this.map.removeInteraction(this.deviceDraw);
     };
 
+    userSubscription!: Subscription;
+    loggedUser: any;
+    isLoggedUserAdmin = false;
+
     ngOnInit(): void {
+
+        this.userSubscription = this.authService.user().subscribe(user => (this.loggedUser = user));
+        if ('customerId' in this.loggedUser) {
+            this.isLoggedUserAdmin = false;
+        } else {
+            this.isLoggedUserAdmin = true;
+        }
+
         this.selectedFeature = new Select();
         const zoneSource = new VectorSource();
         this.zoneVectorLayer = new VectorLayer({
@@ -324,6 +336,7 @@ export class DeviceConfigurationComponent implements OnInit {
             this.loadAreas().pipe(
                 take(1),
             ).subscribe(initialItems => {
+                // console.log(initialItems);
                 this.addAreaFeaturesInMap(initialItems);
                 this.areaSubject.next(initialItems);
             });
@@ -342,15 +355,15 @@ export class DeviceConfigurationComponent implements OnInit {
                     const featureProp = feature.getProperties();
                     if (featureType == "device") {
                         this.selectedDevice = featureProp.id;
-                        this.onDeviceSelect({id: this.selectedDevice});
+                        this.onDeviceSelect({ id: this.selectedDevice });
                         return true;
                     } else if (featureType == "area") {
                         this.selectedArea = featureProp.id;
-                        this.onAreaSelect({id: this.selectedArea});
+                        this.onAreaSelect({ id: this.selectedArea });
                         return true;
                     } else if (featureType == "zone") {
                         this.selectedZone = featureProp.id;
-                        this.onZoneSelect({id: this.selectedZone});
+                        this.onZoneSelect({ id: this.selectedZone });
                         return true;
                     }
                     return false;
@@ -401,6 +414,7 @@ export class DeviceConfigurationComponent implements OnInit {
                 name: area.name,
                 geometry: new Polygon(polygonArray)
             });
+
             feature.setId("area_" + area.id);
             feature.setProperties({
                 id: area.id,
@@ -408,11 +422,11 @@ export class DeviceConfigurationComponent implements OnInit {
                 customerId: area.customerId,
                 type: "area",
                 name: area.name,
-                userName: area.userName,
-                userId: area.userId,
+                users: area.User,
                 polygon: polygonArray,
                 index: i
             });
+            // console.log(feature.getProperties());
             features.push(feature);
         }
         let source = this.areaVectorLayer.getSource();
@@ -696,7 +710,7 @@ export class DeviceConfigurationComponent implements OnInit {
                                     });
                                     this.zoneVectorLayer.getSource()?.removeFeature(feature);
                                     const updatedZones = [...currentZones.slice(0, index),
-                                        ...currentZones.slice(index + 1)
+                                    ...currentZones.slice(index + 1)
                                     ];
 
                                     this.zoneSubject.next(updatedZones);
@@ -763,7 +777,9 @@ export class DeviceConfigurationComponent implements OnInit {
             const polygon = feature.getGeometry() as geom.Polygon;
             const view = this.map.getView();
             this.zoomToFeature(view, polygon.getExtent())
-            this.editZoneClick(feature);
+            if (this.isLoggedUserAdmin) {
+                this.editZoneClick(feature);
+            }
         } else {
             this.clearZoneSelections();
             const view = this.map.getView();
@@ -778,11 +794,11 @@ export class DeviceConfigurationComponent implements OnInit {
         const polygon = feature.getGeometry() as geom.Polygon;
         const zoneFeatures = this.getZoneFeatureOfTheArea(polygon);
         if (zoneFeatures.length > 0) {
-            const data = {zones: zoneFeatures, zoneId: undefined, customerId: undefined};
+            const data = { zones: zoneFeatures, zoneId: undefined, customerId: undefined };
             if (zoneFeatures.length == 1) {
-                data.zoneId = (zoneFeatures as any) [0].id;
+                data.zoneId = (zoneFeatures as any)[0].id;
             }
-            data.customerId = (zoneFeatures as any) [0].customerId;
+            data.customerId = (zoneFeatures as any)[0].customerId;
             this.areaComponentReference = this.dialog.open(AreaConfigurationComponent, {
                 autoFocus: false,
                 data: data,
@@ -794,26 +810,31 @@ export class DeviceConfigurationComponent implements OnInit {
                         let areaResult = result.data;
                         let polygonArray = polygon.getCoordinates();
                         areaResult.polygon = JSON.stringify(polygonArray);
+                        console.log(areaResult);
                         this.deviceConfigurationService.addArea(areaResult).subscribe({
                             next: response => {
                                 if (response.status == Constant.SUCCESS) {
                                     const areaArray = this.areaSubject.getValue();
                                     this.toast.success(response.message);
+
                                     let areaData = {
                                         id: response.data.id,
-                                        type: "area",
-                                        name: areaResult.name,
-                                        userName: areaResult.userName,
-                                        userId: areaResult.userId,
                                         zoneId: areaResult.zoneId,
                                         customerId: areaResult.customerId,
+                                        type: "area",
+                                        name: areaResult.name,
+                                        Users: areaResult.users,
+                                        users: areaResult.users,
+                                        User: areaResult.users,
                                         polygon: polygonArray,
-                                        index: areaArray.length
+                                        index: areaArray.length,
                                     };
+
                                     feature.setProperties(areaData);
                                     feature.setId("area_" + response.data.id);
                                     const updatedAreas = [...areaArray, areaData];
                                     this.areaSubject.next(updatedAreas);
+
                                     this.selectedZone = areaResult.zoneId;
                                     this.selectedArea = areaData.id;
                                     this.areaComponentReference.close();
@@ -890,9 +911,14 @@ export class DeviceConfigurationComponent implements OnInit {
             if (zoneFeatures.length > 0) {
                 let index = feature.get("index");
                 this.selectedFeature?.getFeatures().clear();
+                // console.log(featureProp);
+
                 let data = {
-                    id: featureProp.id, name: featureProp.name,
-                    userId: featureProp.userId, userName: featureProp.userName,
+                    id: featureProp.id,
+                    name: featureProp.name,
+                    // userId: featureProp.userId, 
+                    // userName: featureProp.userName,
+                    users: featureProp.users,
                     zones: zoneFeatures,
                     zoneId: undefined,
                     customerId: featureProp.customerId,
@@ -906,24 +932,61 @@ export class DeviceConfigurationComponent implements OnInit {
                 });
                 this.dialogSubscription = this.dialogService.dataObservable$.subscribe((result) => {
                     if (result) {
+                        // console.log(result);
+
                         let areaResult = result.data;
                         if (result.click === "save") {
                             let polygonArray = polygon.getCoordinates();
                             areaResult.polygon = JSON.stringify(polygonArray);
-                            let areaData = {
+              
+                            let userIds: any = [];
+                            let users:any=[];
+
+                            function isArrayObject(array: any[]): boolean {
+                                return array.every(item => typeof item === 'object' && item !== null && !Array.isArray(item));
+                            }
+
+                            if (isArrayObject(areaResult.userIds)) {
+                                users = areaResult.userIds;
+                                areaResult.userIds.forEach((user: any) => {
+                                    userIds.push(user.id);
+                                })
+                            } else if (isArrayObject(areaResult.users)) {
+                                users = areaResult.users;
+                                areaResult.users.forEach((user: any) => {
+                                    userIds.push(user.id);
+                                })
+                            }
+
+                            let updateAreaData = {
+                                id: areaResult.id,
+                                name: areaResult.name,
+                                zoneId: areaResult.zoneId,
+                                userIds: userIds,
+                                polygon: areaResult.polygon,
+                                userName: ""
+                            }
+                            // console.log(updateAreaData);
+
+                            let areaData: any = {
                                 id: areaResult.id,
                                 zoneId: areaResult.zoneId,
                                 customerId: areaResult.customerId,
+                                type: "area",
                                 name: areaResult.name,
-                                userName: areaResult.userName,
-                                userId: areaResult.userId,
+                                Users: users,
+                                users: users,
+                                User: users,
                                 polygon: polygonArray,
-                                index: index
+                                // index: areaArray.length,
                             };
-                            this.deviceConfigurationService.updateArea(areaResult).subscribe({
+
+                            this.deviceConfigurationService.updateArea(updateAreaData).subscribe({
                                 next: response => {
                                     if (response.status == Constant.SUCCESS) {
                                         const currentAreas = this.areaSubject.getValue();
+                                        // console.log(currentAreas);
+
                                         feature.setProperties(areaData);
                                         const updatedAreas = [...currentAreas.slice(0, index),
                                             areaData, ...currentAreas.slice(index + 1)];
@@ -956,7 +1019,7 @@ export class DeviceConfigurationComponent implements OnInit {
                                         const currentAreas = this.areaSubject.getValue();
                                         this.areaVectorLayer.getSource()?.removeFeature(feature)
                                         const updatedAreas = [...currentAreas.slice(0, index),
-                                            ...currentAreas.slice(index + 1)
+                                        ...currentAreas.slice(index + 1)
                                         ];
                                         this.loadDevices().pipe(
                                             take(1),
@@ -1074,6 +1137,7 @@ export class DeviceConfigurationComponent implements OnInit {
                 this.selectedArea = data.areaId;
             }
             this.featureDeviceConfigurationComponent = this.dialog.open(FeatureDeviceConfigurationComponent, {
+                width: '600px',
                 autoFocus: false,
                 data: data,
                 disableClose: true
@@ -1202,11 +1266,13 @@ export class DeviceConfigurationComponent implements OnInit {
                     data.areaId = (areaFeatures as any)[0].id;
                 }
                 this.featureDeviceConfigurationComponent = this.dialog.open(FeatureDeviceConfigurationComponent, {
-                    data: data, autoFocus: false, disableClose: true
+                    data: data, autoFocus: false, disableClose: true, width:'600px'
                 });
                 this.dialogSubscription = this.dialogService.dataObservable$.subscribe((result) => {
                     if (result) {
                         let deviceResult = result.data;
+                        // console.log(deviceResult);
+                        
                         if (result.click === "save") {
                             point = new Point([deviceResult.lat, deviceResult.lon])
                                 .transform(this.PROJECTION_EPSG_4326, this.PROJECTION_EPSG_3857);
@@ -1274,7 +1340,7 @@ export class DeviceConfigurationComponent implements OnInit {
                                         const currentDevices = this.deviceSubject.getValue();
                                         this.deviceVectorLayer.getSource()?.removeFeature(feature)
                                         const updatedDevices = [...currentDevices.slice(0, index),
-                                            ...currentDevices.slice(index + 1)
+                                        ...currentDevices.slice(index + 1)
                                         ];
 
                                         this.deviceSubject.next(updatedDevices);

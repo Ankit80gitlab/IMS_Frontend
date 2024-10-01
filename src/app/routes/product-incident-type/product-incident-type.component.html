@@ -48,7 +48,7 @@
         </button>
         <!-- <button class="col-sm-4" mat-raised-button color="primary" (click)="onDeleteClick()" *ngIf="saveBtnText === 'Update'">Delete</button> -->
         <button [disabled]="!incidentTypeForm.valid" class="col-sm-4" mat-raised-button color="primary"
-          [mat-dialog-close]="incidentTypeForm.value" (click)="onSaveClick()">
+          (click)="onSaveClick()">
           Save
         </button>
       </div>

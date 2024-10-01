@@ -10,6 +10,7 @@ import { MatInput } from '@angular/material/input';
 import { MtxDialogData } from '@ng-matero/extensions/dialog';
 import { MtxSelect } from '@ng-matero/extensions/select';
 import { DialogService } from 'app/utility/dialog.service';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-product-incident-type',
@@ -101,11 +102,31 @@ export class ProductIncidentTypeComponent {
     this.dialogRef.close();
   };
 
+  private readonly toast = inject(ToastrService);
+
   onSaveClick(): void {
     if (this.incidentTypeForm.valid) {
-      const data = this.incidentTypeForm.value;
-      //data.customerName = this.selectedCustomerName;
-      this.dialogService.submit({ click: "save", data: data });
+      this.items = this.incidentTypeForm.get('items') as FormArray;
+      let incidentType: any = [];
+      if (this.items.length != 0) {
+        for (let i of this.items.value) {
+          let c = i.type.toLowerCase();
+          incidentType.push(c);
+        }
+      }
+      let duplicateFound = false;
+      const valueSet = new Set();
+      for (const value of incidentType) {
+        if (valueSet.has(value)) {
+          this.toast.error("Incident type can not be same")
+          duplicateFound = true;
+          break;
+        } else { valueSet.add(value) }
+      }
+      if (!duplicateFound) {
+        const data = this.incidentTypeForm.value;
+        this.dialogService.submit({ click: "save", data: data });
+      }
     }
   };
 

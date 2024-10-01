@@ -1,23 +1,158 @@
-
-  .text-tile{
-    margin-left: 5%;
-  }
-  .editor-color{
-    color: black !important;border: 2px solid #d1cece;
-  }
-  .input_fileupload--hidden{
-    display:none;
-  }
-  .full-width {
-    width: 100%;
-  }
-  .bordered-div {
-    border: 2px solid #2b2727; /* Change the color and width as needed */
-    padding: 50px; /* Optional: Adds padding inside the div */
-    margin: 10px; /* Optional: Adds margin outside the div */
-    width: 300px; /* Optional: Sets a fixed width for the div */
-    height: 150px; /* Optional: Sets a fixed height for the div */
+.text-tile {
+  margin-left: 5%;
 }
-.mx-width{
-  max-width:300px !important
+
+
+
+/* .editor-color {
+  color: black !important;
+  border: 2px solid #d1cece;
+} */
+
+.input_fileupload--hidden {
+  display: none;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.bordered-div {
+  border: 2px solid #2b2727;
+  /* Change the color and width as needed */
+  padding: 50px;
+  /* Optional: Adds padding inside the div */
+  margin: 10px;
+  /* Optional: Adds margin outside the div */
+  width: 300px;
+  /* Optional: Sets a fixed width for the div */
+  height: 150px;
+  /* Optional: Sets a fixed height for the div */
+}
+
+.mx-width {
+  max-width: 300px !important
+}
+
+.custom-editor-menu {
+  background-color: #ff3b3b;
+  color: #ff3b3b;
+}
+
+.label {
+  margin: 5px;
+}
+
+:host ::ng-deep .ql-stroke {
+  stroke: white !important;
+}
+
+:host ::ng-deep .ql-fill {
+  fill: white !important;
+}
+
+::ng-deep .view-content-editor .ql-container {
+  border: none !important;
+}
+::ng-deep .view-content-editor-c .ql-container {
+  border: none !important;
+}
+::ng-deep .view-content-editor .ql-toolbar {
+  border: none !important;
+}
+::ng-deep .view-content-editor-c .ql-toolbar {
+  border: none !important;
+}
+
+.mat-tab-group {
+  margin-bottom: 48px;
+}
+
+.viewBox {
+  /* background-color: #ffffdd; */
+  border: 1px solid gray;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.head {
+  /* color: white; */
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.value {
+  font-size: 14px;
+  /* color: black; */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.link{
+  cursor: pointer;
+}
+
+.link2 {
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.commentedBy {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  margin: 5px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: rgb(190, 190, 190);
+}
+
+.history {
+  font-size: 12px;
+  margin: 5px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.fileAddedBy {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  margin: 5px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: rgb(190, 190, 190);
+}
+
+.fileDesc{
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.subTicketInfo{
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ticketInfo{
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color:white;
+}
+
+.icon-text-container {
+  display: flex;
+  align-items: center;
+}
+
+
+a[mtxPhotoviewer] {
+  display: inline-flex;
+  padding: 2px;
+  margin: 2px;
+  border: 1px solid #ddd;
+  cursor: zoom-in;
+
+  &:hover {
+    border-color: #aaa;
+  }
 }

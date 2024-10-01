@@ -1,0 +1,12 @@
+<button mat-icon-button [matMenuTriggerFor]="menu">
+    <mat-icon matBadge={{notifications.length}} matBadgeColor="warn" aria-hidden="false">notifications</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="custom">
+    @for (notification of notifications; track notification) {
+    <button mat-menu-item (click)="handleClick(notification.id)">
+        <mat-icon class="m-x-8" matListItemIcon>info</mat-icon>
+        {{ notification.message }}</button>
+    <mat-divider></mat-divider>
+    }
+</mat-menu>

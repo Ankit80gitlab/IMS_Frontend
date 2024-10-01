@@ -97,7 +97,7 @@ export class CustomerUsersManagementComponent {
   selectedFeatureOfRole = [];
   currentProduct: any;
 
-  onFeatureIdChange($event: Event) {}
+  onFeatureIdChange($event: Event) { }
 
   customerUserForm!: FormGroup;
 
@@ -124,7 +124,24 @@ export class CustomerUsersManagementComponent {
     }
   }
 
-  removeGroup(i: number) {this.incidentTypeDtos.removeAt(i);}
+  removeGroup(i: number) {
+    this.incidentTypeDtos.removeAt(i);
+    this.areSingleIncidentsSelected = true;
+    let incidentIds: any = [];
+    this.incidentTypeDtos = this.customerUserForm.get('incidentTypeDtos') as FormArray;
+    if (this.incidentTypeDtos.length != 0) {
+      this.incidentTypeDtos.controls.forEach((control, index) => {
+        incidentIds.push(control.value.id);
+      });
+    }
+    const valueSet = new Set();
+    for (const value of incidentIds) {
+      if (valueSet.has(value)) {
+        this.areSingleIncidentsSelected = false;
+        break;
+      } else { valueSet.add(value) }
+    }
+  }
 
   createItem(): FormGroup {
     return this.formBuilder.group({

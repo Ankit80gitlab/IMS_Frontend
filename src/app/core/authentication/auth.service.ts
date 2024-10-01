@@ -4,6 +4,7 @@ import { filterObject, isEmptyObject } from './helpers';
 import { User } from './interface';
 import { LoginService } from './login.service';
 import { TokenService } from './token.service';
+import { WebsocketService } from 'app/services/websocket.service';
 
 @Injectable({
   providedIn: 'root',

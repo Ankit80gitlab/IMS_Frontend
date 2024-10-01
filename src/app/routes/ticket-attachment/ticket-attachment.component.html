@@ -1,0 +1,69 @@
+<div class="row">
+
+    <div class="col-md-12">
+        <mat-card>
+            <div style="padding: 2%;">
+                <mat-card>
+                    <mat-card-header style="background: #0970af;">
+                        <mat-card-title>Document #{{id}}</mat-card-title>
+                    </mat-card-header>
+
+                    <mat-card-content style="padding: 4%;">
+                        <div class="viewBox">
+
+                            <div *ngIf="safeFileUrl">
+                                <div class="row">
+
+                                    <!-- for pdf -->
+                                    <div *ngIf="fileType.includes('pdf')">
+                                        <div class="col-sm-12">
+                                            <iframe [src]="safeFileUrl" style="width:100%;height: 600px;"
+                                                frameborder="0"></iframe>
+                                        </div>
+                                    </div>
+
+                                    <!-- for png -->
+                                    <div *ngIf="fileType.includes('image/png')">
+                                        <div class="col-sm-12">
+                                            <img [src]="safeFileUrl" alt="File Image" style="height: 400px;">
+                                        </div>
+                                        <hr>
+                                        <div class="col-sm-12">
+                                            <a [href]="safeFileUrl" [download]="fileName">Download File</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- for jpg -->
+                                    <div *ngIf="fileType.includes('image/jpeg')">
+                                        <div class="col-sm-12">
+                                            <img [src]="safeFileUrl" alt="File Image" style="height: 400px;">
+                                        </div>
+                                        <hr>
+                                        <div class="col-sm-12">
+                                            <a [href]="safeFileUrl" [download]="fileName">Download File</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- for unsupported media -->
+                                    <div *ngIf="!fileType.includes('pdf') &&
+                                    !fileType.includes('image') &&
+                                    !fileType.includes('text') &&
+                                    !fileType.includes('doc')">
+                                        <div class="col-sm-12">
+                                            <p>Unsupported Media</p>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <a [href]="safeFileUrl" [download]="fileName">Download File</a>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </mat-card>
+    </div>
